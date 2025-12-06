@@ -1,0 +1,295 @@
+import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '../store/useAuthStore';
+import { productService } from '../services/productService';
+import { categoryService } from '../services/categoryService';
+import { healthService } from '../services/healthService';
+import { orderService } from '../services/orderService';
+import { orderDetailService } from '../services/orderDetailService';
+import ProductForm from '../components/admin/ProductForm';
+import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, FolderPlus, Eye, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+
+const AdminDashboard = () => {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('products');
+  
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [health, setHealth] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [prod, cat, sys] = await Promise.all([
+        productService.getAll(),
+        categoryService.getAll(),
+        healthService.check()
+      ]);
+      setProducts(prod);
+      setCategories(cat);
+      setHealth(sys);
+    } catch (e) { 
+      console.error(e);
+      setError('Error al cargar datos del servidor');
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const loadOrders = async () => {
+    try {
+      const ordersData = await orderService.getAll();
+      setOrders(ordersData);
+    } catch (e) {
+      console.error('Error loading orders:', e);
+      setError('Error al cargar órdenes');
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      loadOrders();
+    }
+  }, [activeTab]);
+
+  const handleLogout = () => { logout(); navigate('/'); };
+  const handleGoHome = () => { navigate('/'); };
+
+  const handleCreateProduct = () => { setEditingProduct(null); setIsProductModalOpen(true); };
+  const handleEditProduct = (p) => { setEditingProduct(p); setIsProductModalOpen(true); };
+  const handleDeleteProduct = async (id) => { 
+    if(confirm('¿Está seguro de eliminar este producto?')) { 
+      try {
+        await productService.delete(id); 
+        setProducts(products.filter(p => p.id !== id));
+      } catch (e) { alert('Error al eliminar'); }
+    }
+  };
+  const handleProductSubmit = async (d) => { 
+    if(editingProduct) { 
+      const u = await productService.update(editingProduct.id, d); 
+      setProducts(products.map(p => p.id === u.id ? u : p)); 
+    } else { 
+      const c = await productService.create(d); 
+      setProducts([...products, c]); 
+    } 
+    setIsProductModalOpen(false); 
+  };
+  
+  const handleCreateCategory = async () => { 
+    const n = prompt("Nombre de la nueva categoría:"); 
+    if(n && n.trim()) { 
+      try {
+        const c = await categoryService.create({name: n.trim()}); 
+        setCategories([...categories, c]);
+      } catch (e) { alert('Error al crear categoría'); }
+    }
+  };
+  const handleDeleteCategory = async (id) => { 
+    if(confirm('¿Está seguro de eliminar esta categoría?')) { 
+      try {
+        await categoryService.delete(id); 
+        setCategories(categories.filter(c => c.id !== id));
+      } catch (e) { alert('Error al eliminar. Puede tener productos asociados.'); }
+    }
+  };
+
+  const handleViewOrder = async (o) => { 
+    setSelectedOrder(o); 
+    setLoadingDetails(true); 
+    try { 
+      const d = await orderDetailService.getByOrderId(o.id); 
+      setOrderDetails(d); 
+    } catch(e) { 
+      console.error(e);
+      setOrderDetails([]);
+    } finally { 
+      setLoadingDetails(false); 
+    }
+  };
+
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const healthColor = health?.status === 'healthy' ? 'bg-green-500' : 'bg-red-500';
+
+  const getStatusStyle = (status) => {
+    const s = status?.toLowerCase();
+    if (s === 'completed' || s === 'completado') return 'bg-green-500/10 text-green-400 border-green-500/20';
+    if (s === 'shipped' || s === 'enviado') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+  };
+
+  return (
+    <div className="min-h-screen bg-background pt-8 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        
+        <div className="flex flex-col md:flex-row justify-between items-center mb-10 bg-surface p-6 rounded-2xl shadow-lg border border-ui-border">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">Panel de Administración</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${healthColor} animate-pulse`}></span>
+              <p className="text-xs font-medium text-text-secondary">Sistema: {health?.status?.toUpperCase() || 'OFFLINE'}</p>
+            </div>
+          </div>
+          <div className="flex gap-4 mt-4 md:mt-0">
+            <button onClick={loadData} className="flex items-center gap-2 text-text-secondary hover:text-primary text-sm font-medium px-3 py-2 rounded-lg hover:bg-background"><RefreshCw size={18}/> Actualizar</button>
+            <button onClick={handleGoHome} className="flex items-center gap-2 text-text-secondary hover:text-primary text-sm font-medium px-3 py-2 rounded-lg hover:bg-background"><Home size={18}/> Tienda</button>
+            <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 hover:bg-red-500/10 px-4 py-2 rounded-lg text-sm font-bold border border-red-500/20"><LogOut size={18}/> Salir</button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-6">
+            <AlertCircle size={18} />{error}
+          </div>
+        )}
+
+        <div className="flex space-x-1 bg-surface p-1 rounded-xl shadow-sm max-w-lg mb-8 border border-ui-border">
+          {['products', 'categories', 'orders'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all capitalize ${activeTab === tab ? 'bg-primary text-black font-bold shadow-lg shadow-primary/20' : 'text-text-secondary hover:text-text-primary hover:bg-background'}`}>
+              {tab === 'products' && <Package size={18}/>}{tab === 'categories' && <Tag size={18}/>}{tab === 'orders' && <ShoppingBag size={18}/>} {tab}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'products' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex justify-between mb-6 gap-4">
+              <div className="relative flex-grow max-w-md">
+                <Search className="absolute left-3 top-2.5 text-text-secondary" size={20} />
+                <input type="text" placeholder="Buscar producto..." className="w-full pl-10 pr-4 py-2.5 border border-ui-border rounded-xl outline-none text-text-primary bg-surface focus:border-primary" onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+              <button onClick={handleCreateProduct} className="bg-primary hover:bg-primary-hover text-black font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20"><Plus size={18}/> Nuevo</button>
+            </div>
+            
+            <div className="bg-surface rounded-2xl shadow-lg overflow-hidden border border-ui-border">
+              <table className="w-full text-left">
+                <thead className="bg-background/50 border-b border-ui-border">
+                  <tr>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Producto</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Precio</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Stock</th>
+                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ui-border">
+                  {filteredProducts.map(p => (
+                    <tr key={p.id} className="hover:bg-white/5">
+                      <td className="p-4 font-medium text-text-primary">{p.name}</td>
+                      <td className="p-4 font-bold text-primary">${p.price}</td>
+                      <td className="p-4 text-text-secondary">{p.stock} un.</td>
+                      <td className="p-4 text-right space-x-2">
+                        <button onClick={() => handleEditProduct(p)} className="text-secondary-light hover:bg-secondary-light/20 p-2 rounded-lg"><Edit size={18}/></button>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg"><Trash2 size={18}/></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'categories' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="flex justify-between mb-6">
+              <h2 className="text-xl font-bold text-text-primary">Listado de Categorías</h2>
+              <button onClick={handleCreateCategory} className="bg-secondary-DEFAULT hover:bg-secondary-light text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2"><FolderPlus size={18}/> Nueva</button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {categories.map(c => (
+                <div key={c.id} className="bg-surface p-5 rounded-xl border border-ui-border flex justify-between items-center group hover:border-primary/50">
+                  <span className="font-medium text-text-primary">{c.name}</span>
+                  <button onClick={() => handleDeleteCategory(c.id)} className="text-text-secondary hover:text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'orders' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="bg-surface rounded-2xl shadow-lg overflow-hidden border border-ui-border">
+              <table className="w-full text-left">
+                <thead className="bg-background/50 border-b border-ui-border">
+                  <tr>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">ID</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Fecha</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Total</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Estado</th>
+                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase">Detalle</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ui-border">
+                  {orders.map(o => (
+                    <tr key={o.id} className="hover:bg-white/5">
+                      <td className="p-4 font-mono text-primary">#{o.id}</td>
+                      <td className="p-4 text-text-primary">{o.date}</td>
+                      <td className="p-4 font-bold text-text-primary">${parseFloat(o.total).toFixed(2)}</td>
+                      <td className="p-4"><span className={`px-2 py-1 rounded-md text-xs font-bold border ${getStatusStyle(o.status)}`}>{o.status}</span></td>
+                      <td className="p-4 text-right">
+                        <button onClick={() => handleViewOrder(o)} className="text-primary hover:bg-primary/10 p-2 rounded-lg flex items-center gap-2 ml-auto text-sm font-medium"><Eye size={16}/> Ver</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {orders.length === 0 && (
+                    <tr><td colSpan="5" className="p-8 text-center text-text-muted">No hay órdenes registradas</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+
+        <ProductForm isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} onSubmit={handleProductSubmit} initialData={editingProduct} categories={categories} />
+
+        <AnimatePresence>
+          {selectedOrder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b border-ui-border">
+                  <h3 className="text-xl font-bold text-text-primary">Orden #{selectedOrder.id}</h3>
+                  <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-background rounded-full text-text-secondary hover:text-text-primary"><X size={20}/></button>
+                </div>
+                <div className="p-6">
+                  {loadingDetails ? (
+                    <p className="text-center text-text-secondary">Cargando...</p> 
+                  ) : (
+                    <ul className="space-y-3">
+                      {orderDetails.map((item, idx) => (
+                        <li key={idx} className="flex justify-between text-sm p-3 bg-background rounded-lg border border-ui-border text-text-primary">
+                          <span>{item.quantity}x {item.product_name}</span>
+                          <span className="font-bold text-primary">${item.subtotal?.toFixed(2)}</span>
+                        </li>
+                      ))}
+                      {orderDetails.length === 0 && <li className="text-center text-text-muted">Sin detalles</li>}
+                    </ul>
+                  )}
+                  <div className="mt-6 flex justify-end pt-4 border-t border-ui-border">
+                    <p className="text-lg font-bold text-text-primary">Total: <span className="text-primary">${parseFloat(selectedOrder.total).toFixed(2)}</span></p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

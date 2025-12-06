@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    /* Fondo oscuro y texto blanco por defecto */
+    @apply bg-background text-text-primary font-sans antialiased selection:bg-primary selection:text-black;
+  }
+  
+  /* Inputs y Selects globales para modo oscuro */
+  input, select, textarea {
+    @apply bg-surface border border-ui-border text-text-primary rounded-xl outline-none focus:ring-2 focus:ring-primary/50 transition-all;
+  }
+}
+
+/* Scrollbar Personalizado (Estilo Neon) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-surface rounded-full border border-ui-border;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/50; /* Verde semitransparente al hacer hover */
+}
