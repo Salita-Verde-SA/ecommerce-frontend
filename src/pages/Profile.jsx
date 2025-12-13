@@ -3,9 +3,13 @@ import { useAuthStore } from '../store/useAuthStore';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
 import { billService } from '../services/billService';
+import { clientService } from '../services/clientService';
 import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import AddressForm from '../components/admin/AddressForm';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import AlertModal from '../components/ui/AlertModal';
 
 const Profile = () => {
   const { user, logout } = useAuthStore();
@@ -18,19 +22,29 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Modales
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  const showAlert = (type, title, message) => {
+    setAlertModal({ isOpen: true, type, title, message });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError('');
       try {
         if (activeTab === 'orders') {
-          const data = await orderService.getMyOrders();
+          const data = await orderService.getMyOrders(user.id_key);
           setOrders(data);
         } else if (activeTab === 'addresses') {
-          const data = await addressService.getMyAddresses();
+          const data = await addressService.getMyAddresses(user.id_key);
           setAddresses(data);
         } else if (activeTab === 'bills') {
-          const data = await billService.getMyBills();
+          const data = await billService.getMyBills(user.id_key);
           setBills(data);
         }
       } catch (err) { 
@@ -41,44 +55,52 @@ const Profile = () => {
       }
     };
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, user.id_key]);
 
   const handleLogout = () => { 
     logout(); 
     navigate('/'); 
   };
 
-  const handleDeleteAddress = async (id) => { 
-    if(confirm("¿Eliminar esta dirección?")) { 
-      try {
-        await addressService.delete(id); 
-        setAddresses(addresses.filter(a => a.id !== id)); 
-      } catch (err) {
-        alert('Error al eliminar la dirección');
+  const handleDeleteAddress = (address) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '¿Eliminar dirección?',
+      message: `Estás a punto de eliminar la dirección "${address.street}, ${address.city}". Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await addressService.delete(address.id);
+          setAddresses(addresses.filter(a => a.id !== address.id));
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('success', 'Eliminada', 'La dirección ha sido eliminada correctamente.');
+        } catch (err) {
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('error', 'Error', 'No se pudo eliminar la dirección.');
+        } finally {
+          setConfirmLoading(false);
+        }
       }
-    }
+    });
   };
 
-  const handleAddAddress = async () => { 
-    const street = prompt("Calle y número:");
-    if (!street) return;
-    
-    const city = prompt("Ciudad:");
-    if (!city) return;
-    
-    const zip_code = prompt("Código Postal:");
-    if (!zip_code) return;
-    
+  const handleAddAddress = () => {
+    setIsAddressModalOpen(true);
+  };
+
+  const handleAddressSubmit = async (addressData) => {
     try {
       const newAddress = await addressService.create({ 
-        street, 
-        city, 
-        zip_code,
-        client_id: user.id 
+        street: addressData.street,
+        number: addressData.number,
+        city: addressData.city,
+        client_id: user.id_key
       }); 
-      setAddresses([...addresses, newAddress]); 
+      setAddresses([...addresses, newAddress]);
+      setIsAddressModalOpen(false);
+      showAlert('success', 'Creada', 'La dirección ha sido creada correctamente.');
     } catch (err) {
-      alert('Error al crear la dirección');
+      throw new Error('Error al crear la dirección');
     }
   };
 
@@ -248,11 +270,11 @@ const Profile = () => {
                             <div className="flex items-start gap-3">
                               <MapPin className="text-primary mt-1" size={20} />
                               <div>
-                                <p className="font-bold text-text-primary">{addr.street}</p>
-                                <p className="text-sm text-text-secondary">{addr.city}, CP {addr.zip_code}</p>
+                                <p className="font-bold text-text-primary">{addr.street} {addr.number}</p>
+                                <p className="text-sm text-text-secondary">{addr.city}</p>
                               </div>
                             </div>
-                            <button onClick={() => handleDeleteAddress(addr.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleDeleteAddress(addr)} className="absolute top-4 right-4 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -302,6 +324,31 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+        {/* Modales */}
+        <AddressForm 
+          isOpen={isAddressModalOpen} 
+          onClose={() => setIsAddressModalOpen(false)} 
+          onSubmit={handleAddressSubmit} 
+        />
+        
+        <ConfirmModal 
+          isOpen={confirmModal.isOpen} 
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} 
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          type="danger"
+          loading={confirmLoading}
+        />
+        
+        <AlertModal 
+          isOpen={alertModal.isOpen} 
+          onClose={() => setAlertModal({ ...alertModal, isOpen: false })} 
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
       </div>
     </div>
   );

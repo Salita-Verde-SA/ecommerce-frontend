@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Loader, Phone, AlertCircle, User } from 'lucide-react';
+import { Mail, Loader, Phone, AlertCircle, User } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { authService } from '../services/authService';
+import { clientService } from '../services/clientService';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,7 +14,7 @@ const Login = () => {
   const setAuth = useAuthStore((state) => state.login);
 
   const [formData, setFormData] = useState({ 
-    email: '', password: '', name: '', lastname: '', telephone: '' 
+    email: '', name: '', lastname: '', telephone: '' 
   });
 
   const handleChange = (e) => {
@@ -31,55 +31,55 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        // LOGIN
-        const data = await authService.login(formData.email, formData.password);
-        setAuth(data.user, data.token);
+        // LOGIN - Buscar cliente por email
+        const client = await clientService.findByEmail(formData.email);
         
-        // Redirigir según rol
-        if (data.user.role === 'admin') {
+        if (!client) {
+          setError('Email no registrado en el sistema');
+          return;
+        }
+        
+        // Guardar datos del cliente en el store
+        setAuth(client);
+        
+        // Redirigir según email (simulación de roles)
+        if (client.email?.includes('admin')) {
           navigate('/admin');
         } else {
           navigate('/');
         }
       } else {
-        // REGISTRO
-        await authService.register({ 
+        // REGISTRO - Crear nuevo cliente
+        const newClient = await clientService.create({ 
           email: formData.email, 
-          password: formData.password, 
           name: formData.name,
           lastname: formData.lastname,
           telephone: formData.telephone
         });
         
-        // Registro exitoso - cambiar a login
-        setSuccess('¡Registro exitoso! Por favor inicia sesión.');
-        setIsLogin(true);
-        setFormData({ email: formData.email, password: '', name: '', lastname: '', telephone: '' });
+        // Registro exitoso - auto login
+        setSuccess('¡Registro exitoso! Redirigiendo...');
+        setTimeout(() => {
+          setAuth(newClient);
+          navigate('/');
+        }, 1500);
       }
     } catch (err) {
-      console.error('Auth error:', err);
+      console.error('Error:', err);
       
-      // Extraer mensaje de error del backend
       let message = 'Error de conexión con el servidor';
       
       if (err.response?.data) {
         const errorData = err.response.data;
         if (typeof errorData.detail === 'string') {
           message = errorData.detail;
-        } else if (Array.isArray(errorData.detail)) {
-          // Errores de validación de Pydantic
-          message = errorData.detail.map(e => e.msg).join(', ');
         } else if (errorData.message) {
           message = errorData.message;
         }
-      } else if (err.message) {
-        message = err.message;
       }
       
       // Traducir mensajes comunes
-      if (message.includes('Incorrect email or password')) {
-        message = 'Email o contraseña incorrectos';
-      } else if (message.includes('already registered') || message.includes('already exists')) {
+      if (message.includes('already registered') || message.includes('already exists')) {
         message = 'Este email ya está registrado';
       }
       
@@ -107,7 +107,7 @@ const Login = () => {
             {isLogin ? 'Bienvenido' : 'Crear Cuenta'}
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            {isLogin ? 'Acceso al sistema TechStore' : 'Únete a la revolución digital'}
+            {isLogin ? 'Ingresa con tu email registrado' : 'Regístrate con tu email'}
           </p>
         </div>
 
@@ -175,20 +175,6 @@ const Login = () => {
               onChange={handleChange} 
               className={inputClass} 
               placeholder="Email" 
-            />
-          </div>
-          
-          <div className="relative">
-            <div className={iconClass}><Lock size={18} /></div>
-            <input 
-              name="password" 
-              type="password" 
-              required 
-              minLength={6}
-              value={formData.password} 
-              onChange={handleChange} 
-              className={inputClass} 
-              placeholder="Contraseña" 
             />
           </div>
 

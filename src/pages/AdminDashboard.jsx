@@ -6,7 +6,10 @@ import { healthService } from '../services/healthService';
 import { orderService } from '../services/orderService';
 import { orderDetailService } from '../services/orderDetailService';
 import ProductForm from '../components/admin/ProductForm';
-import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, FolderPlus, Eye, X, RefreshCw, AlertCircle } from 'lucide-react';
+import CategoryForm from '../components/admin/CategoryForm';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import AlertModal from '../components/ui/AlertModal';
+import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,11 +26,33 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Modales de producto
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  
+  // Modales de categoría
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  
+  // Modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'danger' });
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  
+  // Modal de alerta
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  // Modal de orden
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const showAlert = (type, title, message) => {
+    setAlertModal({ isOpen: true, type, title, message });
+  };
+
+  const showConfirm = (title, message, onConfirm, type = 'danger') => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, type });
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -70,42 +95,87 @@ const AdminDashboard = () => {
   const handleLogout = () => { logout(); navigate('/'); };
   const handleGoHome = () => { navigate('/'); };
 
+  // ===== PRODUCTOS =====
   const handleCreateProduct = () => { setEditingProduct(null); setIsProductModalOpen(true); };
   const handleEditProduct = (p) => { setEditingProduct(p); setIsProductModalOpen(true); };
-  const handleDeleteProduct = async (id) => { 
-    if(confirm('¿Está seguro de eliminar este producto?')) { 
-      try {
-        await productService.delete(id); 
-        setProducts(products.filter(p => p.id !== id));
-      } catch (e) { alert('Error al eliminar'); }
-    }
+  
+  const handleDeleteProduct = (product) => {
+    showConfirm(
+      '¿Eliminar producto?',
+      `Estás a punto de eliminar "${product.name}". Esta acción no se puede deshacer.`,
+      async () => {
+        setConfirmLoading(true);
+        try {
+          await productService.delete(product.id);
+          setProducts(products.filter(p => p.id !== product.id));
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('success', 'Eliminado', 'El producto ha sido eliminado correctamente.');
+        } catch (e) {
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('error', 'Error', 'No se pudo eliminar el producto. Puede tener ventas asociadas.');
+        } finally {
+          setConfirmLoading(false);
+        }
+      }
+    );
   };
+
   const handleProductSubmit = async (d) => { 
-    if(editingProduct) { 
-      const u = await productService.update(editingProduct.id, d); 
-      setProducts(products.map(p => p.id === u.id ? u : p)); 
-    } else { 
-      const c = await productService.create(d); 
-      setProducts([...products, c]); 
-    } 
-    setIsProductModalOpen(false); 
+    try {
+      if(editingProduct) { 
+        const u = await productService.update(editingProduct.id, d); 
+        setProducts(products.map(p => p.id === u.id ? u : p));
+        showAlert('success', 'Actualizado', 'El producto ha sido actualizado correctamente.');
+      } else { 
+        const c = await productService.create(d); 
+        setProducts([...products, c]);
+        showAlert('success', 'Creado', 'El producto ha sido creado correctamente.');
+      } 
+      setIsProductModalOpen(false);
+    } catch (e) {
+      throw e;
+    }
   };
   
-  const handleCreateCategory = async () => { 
-    const n = prompt("Nombre de la nueva categoría:"); 
-    if(n && n.trim()) { 
-      try {
-        const c = await categoryService.create({name: n.trim()}); 
-        setCategories([...categories, c]);
-      } catch (e) { alert('Error al crear categoría'); }
-    }
+  // ===== CATEGORÍAS =====
+  const handleCreateCategory = () => { setEditingCategory(null); setIsCategoryModalOpen(true); };
+  const handleEditCategory = (cat) => { setEditingCategory(cat); setIsCategoryModalOpen(true); };
+  
+  const handleDeleteCategory = (category) => {
+    showConfirm(
+      '¿Eliminar categoría?',
+      `Estás a punto de eliminar "${category.name}". No podrás eliminarla si tiene productos asociados.`,
+      async () => {
+        setConfirmLoading(true);
+        try {
+          await categoryService.delete(category.id);
+          setCategories(categories.filter(c => c.id !== category.id));
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('success', 'Eliminada', 'La categoría ha sido eliminada correctamente.');
+        } catch (e) {
+          setConfirmModal({ ...confirmModal, isOpen: false });
+          showAlert('error', 'Error', 'No se pudo eliminar la categoría. Puede tener productos asociados.');
+        } finally {
+          setConfirmLoading(false);
+        }
+      }
+    );
   };
-  const handleDeleteCategory = async (id) => { 
-    if(confirm('¿Está seguro de eliminar esta categoría?')) { 
-      try {
-        await categoryService.delete(id); 
-        setCategories(categories.filter(c => c.id !== id));
-      } catch (e) { alert('Error al eliminar. Puede tener productos asociados.'); }
+
+  const handleCategorySubmit = async (data) => {
+    try {
+      if (editingCategory) {
+        const updated = await categoryService.update(editingCategory.id, data);
+        setCategories(categories.map(c => c.id === updated.id ? updated : c));
+        showAlert('success', 'Actualizada', 'La categoría ha sido actualizada correctamente.');
+      } else {
+        const created = await categoryService.create(data);
+        setCategories([...categories, created]);
+        showAlert('success', 'Creada', 'La categoría ha sido creada correctamente.');
+      }
+      setIsCategoryModalOpen(false);
+    } catch (e) {
+      throw e;
     }
   };
 
@@ -194,7 +264,7 @@ const AdminDashboard = () => {
                       <td className="p-4 text-text-secondary">{p.stock} un.</td>
                       <td className="p-4 text-right space-x-2">
                         <button onClick={() => handleEditProduct(p)} className="text-secondary-light hover:bg-secondary-light/20 p-2 rounded-lg"><Edit size={18}/></button>
-                        <button onClick={() => handleDeleteProduct(p.id)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg"><Trash2 size={18}/></button>
+                        <button onClick={() => handleDeleteProduct(p)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg"><Trash2 size={18}/></button>
                       </td>
                     </tr>
                   ))}
@@ -208,13 +278,16 @@ const AdminDashboard = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between mb-6">
               <h2 className="text-xl font-bold text-text-primary">Listado de Categorías</h2>
-              <button onClick={handleCreateCategory} className="bg-secondary-DEFAULT hover:bg-secondary-light text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2"><FolderPlus size={18}/> Nueva</button>
+              <button onClick={handleCreateCategory} className="bg-secondary-DEFAULT hover:bg-secondary-light text-white font-bold px-5 py-2.5 rounded-xl flex items-center gap-2"><Plus size={18}/> Nueva</button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {categories.map(c => (
                 <div key={c.id} className="bg-surface p-5 rounded-xl border border-ui-border flex justify-between items-center group hover:border-primary/50">
                   <span className="font-medium text-text-primary">{c.name}</span>
-                  <button onClick={() => handleDeleteCategory(c.id)} className="text-text-secondary hover:text-red-400 opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleEditCategory(c)} className="text-text-secondary hover:text-primary p-1"><Edit size={16}/></button>
+                    <button onClick={() => handleDeleteCategory(c)} className="text-text-secondary hover:text-red-400 p-1"><Trash2 size={16}/></button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -255,8 +328,30 @@ const AdminDashboard = () => {
           </motion.div>
         )}
 
+        {/* Modales */}
         <ProductForm isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} onSubmit={handleProductSubmit} initialData={editingProduct} categories={categories} />
+        
+        <CategoryForm isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} onSubmit={handleCategorySubmit} initialData={editingCategory} />
+        
+        <ConfirmModal 
+          isOpen={confirmModal.isOpen} 
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} 
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          type={confirmModal.type}
+          loading={confirmLoading}
+        />
+        
+        <AlertModal 
+          isOpen={alertModal.isOpen} 
+          onClose={() => setAlertModal({ ...alertModal, isOpen: false })} 
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
 
+        {/* Modal de detalles de orden */}
         <AnimatePresence>
           {selectedOrder && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

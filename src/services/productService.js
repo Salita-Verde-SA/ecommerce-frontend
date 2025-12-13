@@ -19,13 +19,13 @@ const normalizeProduct = (product) => ({
 export const productService = {
   // OBTENER TODOS
   getAll: async () => {
-    const response = await api.get('/products');
+    const response = await api.get('/products/');  // Trailing slash añadido
     return response.data.map(normalizeProduct);
   },
 
   // OBTENER POR ID
   getById: async (id) => {
-    const response = await api.get(`/products/${id}`);
+    const response = await api.get(`/products/${id}/`);  // Trailing slash añadido
     return normalizeProduct(response.data);
   },
 
@@ -38,7 +38,7 @@ export const productService = {
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
-    const response = await api.post('/products', payload);
+    const response = await api.post('/products/', payload);  // Trailing slash añadido
     return normalizeProduct(response.data);
   },
 
@@ -51,13 +51,13 @@ export const productService = {
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
-    const response = await api.put(`/products/${id}`, payload);
+    const response = await api.put(`/products/${id}/`, payload);  // Trailing slash añadido
     return normalizeProduct(response.data);
   },
 
   // ELIMINAR PRODUCTO (DELETE) - Solo Admin
   delete: async (id) => {
-    await api.delete(`/products/${id}`);
+    await api.delete(`/products/${id}/`);  // Trailing slash añadido
     return true;
   }
 };
