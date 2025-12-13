@@ -1,13 +1,15 @@
 import api from '../config/api';
 
+// POR AHORA EN DESUSO, EN SU LUGAR UTILIZAR useAuthStore
+
 export const authService = {
-  login: async (email, password) => {
-    // El backend espera form-data para OAuth2 en /token (no /auth/token)
+  login: async (email) => {
+    // El backend verifica solo la existencia del email
     const formData = new URLSearchParams();
     formData.append('username', email);
-    formData.append('password', password);
+    formData.append('password', ''); // Campo requerido por OAuth2, pero vacío
 
-    const response = await api.post('/token', formData, {
+    const response = await api.post('/token/', formData, {  // Trailing slash añadido
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -23,18 +25,18 @@ export const authService = {
         name: user.name,
         lastname: user.lastname,
         email: user.email,
+        // TODO: Eliminar el role porque no está en el backend
         role: user.role // 'admin' o 'client'
       }
     };
   },
 
   register: async (userData) => {
-    // POST /clients para crear nuevo cliente
-    const response = await api.post('/clients', {
+    // POST /clients para crear nuevo cliente sin contraseña
+    const response = await api.post('/clients/', {  // Trailing slash añadido
       name: userData.name,
       lastname: userData.lastname,
       email: userData.email,
-      password: userData.password,
       telephone: userData.telephone || ''
     });
     return response.data;
@@ -42,7 +44,7 @@ export const authService = {
 
   // Obtener perfil del usuario autenticado usando el endpoint de clientes
   getProfile: async (userId) => {
-    const response = await api.get(`/clients/${userId}`);
+    const response = await api.get(`/clients/${userId}/`);  // Trailing slash añadido
     return response.data;
   }
 };

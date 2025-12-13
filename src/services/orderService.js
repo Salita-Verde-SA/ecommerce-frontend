@@ -1,49 +1,58 @@
 import api from '../config/api';
 
 export const orderService = {
-  // Obtener todas las órdenes (Admin) o del usuario actual
+  // Obtener todas las órdenes
   getAll: async () => {
-    const response = await api.get('/orders');
+    const response = await api.get('/orders/');
     return response.data;
   },
 
-  // Obtener pedidos del cliente autenticado
-  getMyOrders: async () => {
-    const response = await api.get('/orders/my-orders');
-    return response.data.map(order => ({
-      id: order.id,
-      date: order.date,
-      total: parseFloat(order.total),
-      status: order.status,
-      details: order.details || []
-    }));
+  // Obtener pedidos del cliente autenticado (filtrar en frontend)
+  getMyOrders: async (clientId) => {
+    const response = await api.get('/orders/');
+    // Filtrar órdenes del cliente en el frontend
+    return response.data
+      .filter(order => order.client_id === clientId)
+      .map(order => ({
+        id: order.id_key,
+        date: order.date,
+        total: parseFloat(order.total),
+        status: order.status,
+        delivery_method: order.delivery_method,
+        client_id: order.client_id,
+        bill_id: order.bill_id
+      }));
   },
 
   // Obtener orden por ID
   getById: async (id) => {
-    const response = await api.get(`/orders/${id}`);
+    const response = await api.get(`/orders/${id}/`);
     return response.data;
   },
 
   // Crear orden
   createOrder: async (orderData) => {
     const payload = {
-      client_id: orderData.client_id,
+      date: orderData.date || new Date().toISOString(),
       total: parseFloat(orderData.total),
-      status: orderData.status || 'PENDING',
-      details: orderData.details.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: parseFloat(item.price)
-      }))
+      delivery_method: orderData.delivery_method || 3,
+      status: orderData.status || 1,
+      client_id: orderData.client_id,
+      bill_id: orderData.bill_id
     };
-    const response = await api.post('/orders', payload);
+    const response = await api.post('/orders/', payload);
     return response.data;
   },
 
-  // Actualizar estado de orden (Admin)
+  // Actualizar estado de orden
   updateStatus: async (id, status) => {
-    const response = await api.put(`/orders/${id}`, { status });
+    // Primero obtener la orden completa
+    const order = await orderService.getById(id);
+    // Actualizar solo el status
+    const response = await api.put(`/orders/${id}/`, {
+      ...order,
+      status: status
+    });
     return response.data;
   }
 };

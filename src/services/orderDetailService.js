@@ -1,28 +1,45 @@
 import api from '../config/api';
 
 export const orderDetailService = {
-  // Obtener todos los detalles
+  // Obtener todos los detalles de pedido
   getAll: async () => {
-    const response = await api.get('/order-details');
+    const response = await api.get('/order_details/');
     return response.data;
   },
 
-  // Obtener items de una orden específica
+  // Obtener detalles por order_id (filtrar en frontend)
   getByOrderId: async (orderId) => {
-    const response = await api.get(`/order-details/order/${orderId}`);
-    return response.data.map(detail => ({
-      id: detail.id,
-      product_id: detail.product_id,
-      product_name: detail.product?.name || 'Producto',
-      quantity: detail.quantity,
-      price: parseFloat(detail.price),
-      subtotal: parseFloat(detail.price) * detail.quantity
-    }));
+    const response = await api.get('/order_details/');
+    // Filtrar detalles del pedido específico
+    return response.data.filter(detail => detail.order_id === orderId);
   },
 
   // Obtener detalle por ID
   getById: async (id) => {
-    const response = await api.get(`/order-details/${id}`);
+    const response = await api.get(`/order_details/${id}/`);
     return response.data;
+  },
+
+  // Crear detalle de pedido
+  create: async (detailData) => {
+    const response = await api.post('/order_details/', {
+      quantity: parseInt(detailData.quantity),
+      price: parseFloat(detailData.price),
+      order_id: detailData.order_id,
+      product_id: detailData.product_id
+    });
+    return response.data;
+  },
+
+  // Actualizar detalle
+  update: async (id, detailData) => {
+    const response = await api.put(`/order_details/${id}/`, detailData);
+    return response.data;
+  },
+
+  // Eliminar detalle
+  delete: async (id) => {
+    await api.delete(`/order_details/${id}/`);
+    return true;
   }
 };

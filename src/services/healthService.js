@@ -1,12 +1,9 @@
 import api from '../config/api';
 
 export const healthService = {
+  // Verificar estado del sistema
   check: async () => {
-    try {
-      const response = await api.get('/health');
-      return response.data;
-    } catch (error) {
-      return { status: 'offline', error: error.message };
-    }
+    const response = await api.get('/health_check/');
+    return response.data;
   }
 };

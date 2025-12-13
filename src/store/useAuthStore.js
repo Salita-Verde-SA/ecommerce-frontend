@@ -5,17 +5,17 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
       isAdmin: false,
 
-      login: (userData, token) => {
-        // El backend envía el rol como 'admin' o 'client'
-        const isAdmin = userData.role === 'admin';
+      // "Login" simplificado - solo almacena datos del cliente
+      login: (userData) => {
+        // Determinar si es admin basado en email o algún otro criterio
+        // Nota: El backend NO tiene roles, esto es solo para UI
+        const isAdmin = userData.email?.includes('admin');
         
         set({ 
           user: userData, 
-          token, 
           isAuthenticated: true,
           isAdmin 
         });
@@ -31,13 +31,10 @@ export const useAuthStore = create(
       logout: () => {
         set({ 
           user: null, 
-          token: null, 
           isAuthenticated: false, 
           isAdmin: false 
         });
       },
-
-      getToken: () => get().token,
     }),
     {
       name: 'techstore-auth-storage',
