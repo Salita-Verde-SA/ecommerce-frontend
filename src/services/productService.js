@@ -5,7 +5,8 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1550009158-9ebf69173e03
 
 // Helper para normalizar productos del backend
 const normalizeProduct = (product) => ({
-  id: product.id,
+  id: product.id_key,           // Alias para compatibilidad frontend
+  id_key: product.id_key,
   name: product.name,
   description: product.description || '',
   price: parseFloat(product.price),
@@ -19,13 +20,13 @@ const normalizeProduct = (product) => ({
 export const productService = {
   // OBTENER TODOS
   getAll: async () => {
-    const response = await api.get('/products/');  // Trailing slash añadido
+    const response = await api.get('/products/');
     return response.data.map(normalizeProduct);
   },
 
   // OBTENER POR ID
   getById: async (id) => {
-    const response = await api.get(`/products/${id}/`);  // Trailing slash añadido
+    const response = await api.get(`/products/${id}`);
     return normalizeProduct(response.data);
   },
 
@@ -33,31 +34,33 @@ export const productService = {
   create: async (productData) => {
     const payload = {
       name: productData.name,
-      description: productData.description,
+      description: productData.description || '',
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
-    const response = await api.post('/products/', payload);  // Trailing slash añadido
+    const response = await api.post('/products/', payload);
     return normalizeProduct(response.data);
   },
 
   // ACTUALIZAR PRODUCTO (PUT) - Solo Admin
   update: async (id, productData) => {
+    // El backend espera el schema completo con id_key
     const payload = {
+      id_key: parseInt(id),
       name: productData.name,
-      description: productData.description,
+      description: productData.description || '',
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
-    const response = await api.put(`/products/${id}/`, payload);  // Trailing slash añadido
+    const response = await api.put(`/products/${id}`, payload);
     return normalizeProduct(response.data);
   },
 
   // ELIMINAR PRODUCTO (DELETE) - Solo Admin
   delete: async (id) => {
-    await api.delete(`/products/${id}/`);  // Trailing slash añadido
+    await api.delete(`/products/${id}`);
     return true;
   }
 };

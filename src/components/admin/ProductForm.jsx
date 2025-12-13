@@ -15,13 +15,13 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
         name: initialData.name || '',
         price: initialData.price || '',
         stock: initialData.stock || '',
-        category_id: initialData.category_id || (categories.length > 0 ? categories[0].id : ''),
+        category_id: String(initialData.category_id || ''),
         description: initialData.description || ''
       });
     } else {
       setFormData({
         name: '', price: '', stock: '', 
-        category_id: categories.length > 0 ? categories[0].id : '', 
+        category_id: categories.length > 0 ? String(categories[0].id) : '', 
         description: ''
       });
     }
@@ -44,9 +44,9 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
 
       // Validaciones
       if (!payload.name) throw new Error('El nombre es requerido');
-      if (payload.price <= 0) throw new Error('El precio debe ser mayor a 0');
-      if (payload.stock < 0) throw new Error('El stock no puede ser negativo');
-      if (!payload.category_id) throw new Error('Debe seleccionar una categoría');
+      if (payload.price <= 0 || isNaN(payload.price)) throw new Error('El precio debe ser mayor a 0');
+      if (payload.stock < 0 || isNaN(payload.stock)) throw new Error('El stock no puede ser negativo');
+      if (!payload.category_id || isNaN(payload.category_id)) throw new Error('Debe seleccionar una categoría');
 
       await onSubmit(payload);
       onClose();
@@ -137,9 +137,9 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
                   onChange={(e) => setFormData({...formData, category_id: e.target.value})} 
                   className={`${inputClasses} appearance-none cursor-pointer`}
                 >
-                  <option value="" disabled>Selecciona una categoría</option>
+                  <option value="">Selecciona una categoría</option>
                   {categories.map(cat => (
-                    <option key={cat.id} value={cat.id} className="bg-surface text-text-primary">{cat.name}</option>
+                    <option key={cat.id} value={String(cat.id)} className="bg-surface text-text-primary">{cat.name}</option>
                   ))}
                 </select>
               </div>

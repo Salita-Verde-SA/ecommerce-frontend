@@ -7,7 +7,7 @@ export const clientService = {
     return response.data;
   },
 
-  // GET /clients/{id}/ - Obtener cliente por ID
+  // GET /clients/{id} - Obtener cliente por ID
   getById: async (id) => {
     const response = await api.get(`/clients/${id}/`);  // Trailing slash añadido
     return response.data;
@@ -24,13 +24,13 @@ export const clientService = {
     return response.data;
   },
 
-  // PUT /clients/{id}/ - Actualizar cliente
+  // PUT /clients/{id} - Actualizar cliente
   update: async (id, clientData) => {
     const response = await api.put(`/clients/${id}/`, clientData);  // Trailing slash añadido
     return response.data;
   },
 
-  // DELETE /clients/{id}/ - Eliminar cliente
+  // DELETE /clients/{id} - Eliminar cliente
   delete: async (id) => {
     await api.delete(`/clients/${id}/`);  // Trailing slash añadido
   },
