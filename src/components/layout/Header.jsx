@@ -13,8 +13,10 @@ const Header = () => {
   const cartItems = useCartStore(state => state.cart);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const isAdmin = user?.role === 'admin';
+  // CORRECCIÓN: Extraemos 'isAdmin' directamente del store, ya que useAuthStore ya lo calculó al hacer login.
+  // La lógica anterior (user?.role === 'admin') fallaba porque el objeto user del backend no trae el campo 'role'.
+  const { user, isAuthenticated, logout, isAdmin } = useAuthStore();
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,7 +43,6 @@ const Header = () => {
   };
 
   return (
-    // CORREGIDO: border-ui-border
     <header className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-ui-border transition-all duration-300 shadow-lg shadow-primary/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -75,7 +76,6 @@ const Header = () => {
                     onSubmit={handleSearchSubmit}
                     className="absolute right-10"
                   >
-                    {/* CORREGIDO: border-ui-border */}
                     <input
                       autoFocus
                       type="text"
@@ -106,6 +106,7 @@ const Header = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
+                {/* Botón de Panel de Administración condicional */}
                 {isAdmin && (
                    <Link to="/admin" className="text-sm font-bold text-primary bg-primary/10 px-4 py-2 rounded-lg hover:bg-primary hover:text-text-inverse transition-all shadow-sm shadow-primary/10 border border-primary/20">
                      Panel
