@@ -5,10 +5,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    // Configuración crítica para SPA: redirige todas las rutas a index.html
-    historyApiFallback: true,
+    host: true,
+    // Configuración correcta para SPA fallback en Vite
+    // Redirige todas las rutas 404 a index.html
+    proxy: {},
   },
   preview: {
     port: 3000,
   },
+  // Esta es la configuración clave para SPA
+  appType: 'spa',
 });
