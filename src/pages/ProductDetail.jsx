@@ -6,6 +6,7 @@ import { productService } from '../services/productService';
 import { reviewService } from '../services/reviewService';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
+import AlertModal from '../components/ui/AlertModal';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -18,6 +19,14 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+
+  // Estado para el modal de alertas
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+
+  // Helper para mostrar alertas
+  const showAlert = (type, title, message) => {
+    setAlertModal({ isOpen: true, type, title, message });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -35,13 +44,28 @@ const ProductDetail = () => {
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
-    if (!isAuthenticated) return alert("Debes iniciar sesión.");
-    if (newReview.comment.length < 10) return alert("Comentario muy corto.");
+    
+    // Validación de sesión corregida con Modal
+    if (!isAuthenticated) {
+      showAlert('warning', 'Acceso Restringido', 'Debes iniciar sesión para publicar una reseña.');
+      return;
+    }
+    
+    // Validación de longitud corregida con Modal
+    if (newReview.comment.length < 10) {
+      showAlert('warning', 'Comentario muy corto', 'Por favor escribe al menos 10 caracteres para que tu opinión sea útil.');
+      return;
+    }
+
     try {
       const created = await reviewService.create({ ...newReview, product_id: parseInt(id), user_id: user.id, user_name: user.name });
       setReviews([...reviews, created]);
       setNewReview({ rating: 5, comment: '' });
-    } catch (error) { console.error(error); }
+      showAlert('success', '¡Gracias!', 'Tu reseña ha sido publicada exitosamente.');
+    } catch (error) { 
+      console.error(error);
+      showAlert('error', 'Error', 'Ocurrió un error al publicar tu reseña. Inténtalo de nuevo.');
+    }
   };
 
   if (loading || !product) return <div className="h-screen flex items-center justify-center bg-background text-primary">Cargando...</div>;
@@ -139,6 +163,15 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Implementación del Modal de Alertas */}
+      <AlertModal 
+        isOpen={alertModal.isOpen} 
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })} 
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
