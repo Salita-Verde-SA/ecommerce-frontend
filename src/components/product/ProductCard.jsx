@@ -48,7 +48,10 @@ const ProductCard = ({ product }) => {
           </h3>
           <div className="flex items-center gap-1 bg-background/50 px-1.5 py-0.5 rounded border border-ui-border shrink-0">
             <Star size={10} className="fill-primary text-primary" />
-            <span className="text-[10px] font-bold text-text-secondary">{product.rating}</span>
+            {/* CORRECCIÓN: Se agrega .toFixed(1) para redondear la calificación a 1 decimal */}
+            <span className="text-[10px] font-bold text-text-secondary">
+              {Number(product.rating).toFixed(1)}
+            </span>
           </div>
         </div>
 
@@ -59,13 +62,11 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-dashed border-ui-border/50">
           <div className="flex flex-col">
             <span className="text-[10px] text-text-muted uppercase tracking-wider font-medium">Precio</span>
-            {/* CORRECCIÓN: Tamaño de texto reducido a text-lg */}
             <span className="text-lg font-bold text-primary tracking-tight">
               ${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
           </div>
 
-          {/* CORRECCIÓN: Botón más pequeño y estético */}
           <button 
             onClick={() => addToCart(product)} 
             className="flex items-center gap-1.5 bg-surface border border-primary/20 text-primary hover:bg-primary hover:text-black hover:border-primary px-3 py-1.5 rounded-lg transition-all active:scale-95 shadow-sm font-semibold text-xs group/btn relative overflow-hidden"
