@@ -42,7 +42,12 @@ const Profile = () => {
           setOrders(data);
         } else if (activeTab === 'addresses') {
           const data = await addressService.getMyAddresses(user.id_key);
-          setAddresses(data);
+          // CORRECCIÓN: Normalizamos para asegurar que 'id' exista siempre (fallback a id_key)
+          const normalizedAddresses = data.map(addr => ({
+            ...addr,
+            id: addr.id || addr.id_key
+          }));
+          setAddresses(normalizedAddresses);
         } else if (activeTab === 'bills') {
           const data = await billService.getMyBills(user.id_key);
           setBills(data);
@@ -63,6 +68,13 @@ const Profile = () => {
   };
 
   const handleDeleteAddress = (address) => {
+    // Alerta de seguridad: nos aseguramos de tener un ID válido antes de abrir el modal
+    const addressId = address.id || address.id_key;
+    if (!addressId) {
+      showAlert('error', 'Error', 'No se pudo identificar la dirección para eliminar.');
+      return;
+    }
+
     setConfirmModal({
       isOpen: true,
       title: '¿Eliminar dirección?',
@@ -70,11 +82,14 @@ const Profile = () => {
       onConfirm: async () => {
         setConfirmLoading(true);
         try {
-          await addressService.delete(address.id);
-          setAddresses(addresses.filter(a => a.id !== address.id));
+          // Usamos el ID validado
+          await addressService.delete(addressId);
+          // Filtramos usando el ID validado para actualizar el estado local
+          setAddresses(prevAddresses => prevAddresses.filter(a => (a.id || a.id_key) !== addressId));
           setConfirmModal({ ...confirmModal, isOpen: false });
           showAlert('success', 'Eliminada', 'La dirección ha sido eliminada correctamente.');
         } catch (err) {
+          console.error(err);
           setConfirmModal({ ...confirmModal, isOpen: false });
           showAlert('error', 'Error', 'No se pudo eliminar la dirección.');
         } finally {
@@ -95,8 +110,15 @@ const Profile = () => {
         number: addressData.number,
         city: addressData.city,
         client_id: user.id_key
-      }); 
-      setAddresses([...addresses, newAddress]);
+      });
+      
+      // CORRECCIÓN: Normalizamos también la nueva dirección antes de agregarla al estado
+      const normalizedNewAddress = {
+        ...newAddress,
+        id: newAddress.id || newAddress.id_key
+      };
+
+      setAddresses([...addresses, normalizedNewAddress]);
       setIsAddressModalOpen(false);
       showAlert('success', 'Creada', 'La dirección ha sido creada correctamente.');
     } catch (err) {
@@ -266,7 +288,7 @@ const Profile = () => {
                     {addresses.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {addresses.map(addr => (
-                          <div key={addr.id} className="bg-surface p-5 rounded-xl border border-ui-border relative group">
+                          <div key={addr.id || addr.id_key} className="bg-surface p-5 rounded-xl border border-ui-border relative group">
                             <div className="flex items-start gap-3">
                               <MapPin className="text-primary mt-1" size={20} />
                               <div>

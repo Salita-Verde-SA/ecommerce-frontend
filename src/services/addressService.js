@@ -14,9 +14,9 @@ export const addressService = {
     return response.data.filter(addr => addr.client_id === clientId);
   },
 
-  // Obtener por ID
+  // Obtener por ID (CORREGIDO: Sin barra final)
   getById: async (id) => {
-    const response = await api.get(`/addresses/${id}/`);
+    const response = await api.get(`/addresses/${id}`);
     return response.data;
   },
 
@@ -32,20 +32,20 @@ export const addressService = {
     return response.data;
   },
 
-  // Actualizar dirección
+  // Actualizar dirección (CORREGIDO: Sin barra final)
   update: async (id, addressData) => {
     const payload = {
       street: addressData.street,
       number: addressData.number || '',
       city: addressData.city
     };
-    const response = await api.put(`/addresses/${id}/`, payload);
+    const response = await api.put(`/addresses/${id}`, payload);
     return response.data;
   },
 
-  // Eliminar dirección
+  // Eliminar dirección (CORREGIDO: Sin barra final)
   delete: async (id) => {
-    await api.delete(`/addresses/${id}/`);
+    await api.delete(`/addresses/${id}`);
     return true;
   }
 };
