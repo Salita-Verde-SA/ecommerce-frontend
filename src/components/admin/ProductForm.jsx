@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Loader, Box, Tag, FileText, DollarSign, Layers, Edit, Plus } from 'lucide-react';
+import { X, Save, Loader, Box, Tag, DollarSign, Layers, Edit, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories = [] }) => {
   const [formData, setFormData] = useState({
-    name: '', price: '', stock: '', category_id: '', description: ''
+    name: '', price: '', stock: '', category_id: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,14 +15,12 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
         name: initialData.name || '',
         price: initialData.price || '',
         stock: initialData.stock || '',
-        category_id: String(initialData.category_id || ''),
-        description: initialData.description || ''
+        category_id: String(initialData.category_id || '')
       });
     } else {
       setFormData({
         name: '', price: '', stock: '', 
-        category_id: categories.length > 0 ? String(categories[0].id) : '', 
-        description: ''
+        category_id: categories.length > 0 ? String(categories[0].id) : ''
       });
     }
     setError('');
@@ -36,7 +34,6 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
     try {
       const payload = {
         name: formData.name.trim(),
-        description: formData.description.trim(),
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         category_id: parseInt(formData.category_id)
@@ -144,18 +141,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
                 </select>
               </div>
               
-              <div className="col-span-2 relative group">
-                <label className={labelClasses}>Descripción Técnica</label>
-                <FileText size={18} className="absolute left-3 top-[38px] text-text-secondary pointer-events-none" />
-                <textarea 
-                  required 
-                  rows="4" 
-                  value={formData.description} 
-                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
-                  className={`${inputClasses} resize-none pt-3`} 
-                  placeholder="Detalles y especificaciones del producto..."
-                ></textarea>
-              </div>
+              {/* Sección de Descripción eliminada tal como se solicitó */}
             </div>
             
             <div className="flex justify-end gap-4 pt-6 border-t border-ui-border bg-background/30 -mx-8 -mb-8 p-8">

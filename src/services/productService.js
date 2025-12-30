@@ -9,7 +9,7 @@ const normalizeProduct = (product, calculatedRating = null) => ({
   id: product.id_key,           // Alias para compatibilidad frontend
   id_key: product.id_key,
   name: product.name,
-  description: product.description || '',
+  description: product.description || '', // Mantenemos fallback vacío para evitar errores en vistas
   price: parseFloat(product.price),
   stock: product.stock,
   category_id: product.category_id,
@@ -83,7 +83,7 @@ export const productService = {
   create: async (productData) => {
     const payload = {
       name: productData.name,
-      description: productData.description || '',
+      // description eliminada
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
@@ -97,14 +97,12 @@ export const productService = {
     const payload = {
       id_key: parseInt(id),
       name: productData.name,
-      description: productData.description || '',
+      // description eliminada
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
     const response = await api.put(`/products/${id}`, payload);
-    // Nota: Al actualizar, no recalculamos rating aquí para mantener la respuesta rápida. 
-    // La vista se encargará de refrescar o usar el valor previo.
     return normalizeProduct(response.data);
   },
 
