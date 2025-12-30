@@ -3,29 +3,31 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './store/useAuthStore';
 
-// Páginas Importadas
+// Páginas
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/AdminDashboard';
-import Profile from './pages/Profile'; // <--- Nueva importación
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import AccessDenied from './pages/AccessDenied';
 
-// Componente para proteger rutas de ADMIN
+// Ruta protegida para ADMIN - redirige a /403 si no tiene permisos
 const AdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin } = useAuthStore();
   
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />; // Bloqueo a clientes simples
+  if (!isAdmin) return <Navigate to="/403" replace />;
 
   return children;
 };
 
-// Componente para proteger rutas de USUARIO REGISTRADO
+// Ruta protegida para usuarios autenticados
 const PrivateRoute = ({ children }) => {
-    const { isAuthenticated } = useAuthStore();
-    return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -38,6 +40,10 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
+          
+          {/* Rutas de Error */}
+          <Route path="/404" element={<NotFound />} />
+          <Route path="/403" element={<AccessDenied />} />
           
           {/* Rutas Protegidas (Requieren Login) */}
           <Route 
@@ -57,7 +63,7 @@ function App() {
             } 
           />
 
-          {/* Rutas de Administrador (Requieren Login + Rol Admin) */}
+          {/* Rutas de Administrador */}
           <Route 
             path="/admin" 
             element={
@@ -67,8 +73,8 @@ function App() {
             } 
           />
           
-          {/* Ruta por defecto (404) */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Ruta catch-all para 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
     </Router>
