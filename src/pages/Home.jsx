@@ -19,13 +19,26 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Obtenemos productos y categorías en paralelo
         const [prodData, catData] = await Promise.all([
           productService.getAll(),
           categoryService.getAll()
         ]);
-        setProducts(prodData);
+        
+        // CORRECCIÓN: Asignamos el nombre de la categoría manualmente cruzando los datos.
+        // El endpoint de productos solo devuelve category_id, por lo que category_name venía como 'Sin categoría'.
+        const productsWithCategories = prodData.map(product => {
+          const category = catData.find(c => c.id === product.category_id);
+          return {
+            ...product,
+            category_name: category ? category.name : 'Sin categoría'
+          };
+        });
+
+        setProducts(productsWithCategories);
         setCategories(catData);
-        setFilteredProducts(prodData);
+        // Inicializamos los productos filtrados con la data ya corregida
+        setFilteredProducts(productsWithCategories);
       } catch (error) {
         console.error("Error cargando datos:", error);
       } finally {
@@ -133,7 +146,6 @@ const Home = () => {
               <button 
                 key={index}
                 onClick={() => filterByCategory(catName)} 
-                // CORREGIDO: border-ui-border
                 className={`flex items-center gap-3 px-6 py-3 rounded-xl font-medium transition-all duration-300 border backdrop-blur-md ${
                   activeCategory === catName 
                     ? 'bg-primary/90 text-text-inverse border-primary shadow-lg shadow-primary/25 scale-105' 
