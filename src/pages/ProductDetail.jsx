@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, ShoppingCart, ArrowLeft, Minus, Plus, Truck, ShieldCheck, User as UserIcon, Tag } from 'lucide-react';
 import { productService } from '../services/productService';
+import { categoryService } from '../services/categoryService';
 import { reviewService } from '../services/reviewService';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -29,9 +30,21 @@ const ProductDetail = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const prodData = await productService.getById(id);
-        const reviewData = await reviewService.getByProduct(id);
-        setProduct(prodData);
+        // Obtenemos producto, categorías y reseñas en paralelo
+        const [prodData, categories, reviewData] = await Promise.all([
+          productService.getById(id),
+          categoryService.getAll(),
+          reviewService.getByProduct(id)
+        ]);
+        
+        // Cruzamos para obtener el nombre de categoría correcto
+        const category = categories.find(c => c.id === prodData.category_id);
+        const productWithCategory = {
+          ...prodData,
+          category_name: category ? category.name : 'Sin categoría'
+        };
+        
+        setProduct(productWithCategory);
         setReviews(reviewData);
       } catch (error) { navigate('/'); } finally { setLoading(false); }
     };
@@ -78,6 +91,13 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
           {/* Image Column */}
           <div className="lg:col-span-7">
+            {/* Badge de categoría FUERA de la imagen */}
+            <div className="mb-4">
+              <span className="inline-flex items-center gap-1.5 bg-surface border border-ui-border text-primary px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                <Tag size={12}/> {product.category_name}
+              </span>
+            </div>
+            
             <div className="bg-surface rounded-3xl border border-ui-border overflow-hidden relative group h-full min-h-[400px] flex items-center justify-center p-8 shadow-2xl shadow-black/20">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <motion.img 
@@ -87,11 +107,7 @@ const ProductDetail = () => {
                 alt={product.name} 
                 className="w-full max-h-[500px] object-contain drop-shadow-xl relative z-10 mix-blend-multiply dark:mix-blend-normal" 
               />
-              <div className="absolute top-6 left-6 flex gap-2">
-                 <span className="bg-background/80 backdrop-blur border border-ui-border text-text-secondary px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                   <Tag size={12}/> {product.category_name}
-                 </span>
-              </div>
+              {/* Badge removido de aquí */}
             </div>
           </div>
           
