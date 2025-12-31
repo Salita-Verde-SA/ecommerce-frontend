@@ -7,9 +7,11 @@ import { orderService } from '../services/orderService';
 import { orderDetailService } from '../services/orderDetailService';
 import ProductForm from '../components/admin/ProductForm';
 import CategoryForm from '../components/admin/CategoryForm';
+import LatencyChart from '../components/admin/LatencyChart';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AlertModal from '../components/ui/AlertModal';
-import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { useLatencyMonitor } from '../hooks/useLatencyMonitor';
+import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,6 +27,18 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Hook de monitoreo de latencia (actualiza cada 5 segundos, mantiene 30 puntos)
+  const { 
+    latencyData, 
+    currentHealth, 
+    isMonitoring, 
+    error: latencyError,
+    connectionStatus,  // Añadir connectionStatus
+    startMonitoring,
+    stopMonitoring,
+    clearData: clearLatencyData
+  } = useLatencyMonitor(2000, 30);
 
   // Modales de producto
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -91,6 +105,13 @@ const AdminDashboard = () => {
       loadOrders();
     }
   }, [activeTab]);
+
+  // Sincronizar health del monitor con el estado local
+  useEffect(() => {
+    if (currentHealth) {
+      setHealth(currentHealth);
+    }
+  }, [currentHealth]);
 
   const handleLogout = () => { logout(); navigate('/'); };
   const handleGoHome = () => { navigate('/'); };
@@ -193,8 +214,45 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleMonitoring = () => {
+    if (isMonitoring) {
+      stopMonitoring();
+    } else {
+      startMonitoring();
+    }
+  };
+
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const healthColor = health?.status === 'healthy' ? 'bg-green-500' : 'bg-red-500';
+  
+  // Actualizar healthColor para reflejar el estado offline
+  const getHealthColor = () => {
+    // Si hay error de conexión o el estado es offline
+    if (connectionStatus === 'offline' || health?.status === 'offline' || health?.errorType) {
+      return 'bg-red-500';
+    }
+    
+    switch (health?.status) {
+      case 'healthy':
+        return 'bg-green-500';
+      case 'warning':
+        return 'bg-yellow-500';
+      case 'degraded':
+        return 'bg-orange-500';
+      case 'critical':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getHealthLabel = () => {
+    if (connectionStatus === 'offline' || health?.status === 'offline' || health?.errorType) {
+      return 'OFFLINE';
+    }
+    return health?.status?.toUpperCase() || 'CONECTANDO...';
+  };
+
+  const healthColor = getHealthColor();
 
   const getStatusStyle = (status) => {
     const s = status?.toLowerCase();
@@ -207,12 +265,15 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background pt-8 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 bg-surface p-6 rounded-2xl shadow-lg border border-ui-border">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">Panel de Administración</h1>
             <div className="flex items-center gap-2 mt-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${healthColor} animate-pulse`}></span>
-              <p className="text-xs font-medium text-text-secondary">Sistema: {health?.status?.toUpperCase() || 'OFFLINE'}</p>
+              <span className={`w-2.5 h-2.5 rounded-full ${healthColor} ${connectionStatus !== 'offline' && health?.status !== 'offline' ? 'animate-pulse' : ''}`}></span>
+              <p className="text-xs font-medium text-text-secondary">
+                Sistema: {getHealthLabel()}
+              </p>
             </div>
           </div>
           <div className="flex gap-4 mt-4 md:mt-0">
@@ -228,6 +289,19 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {/* Gráfico de Latencia - Siempre visible en la parte superior */}
+        <div className="mb-8">
+          <LatencyChart
+            latencyData={latencyData}
+            currentHealth={currentHealth}
+            isMonitoring={isMonitoring}
+            error={latencyError}
+            onToggleMonitoring={handleToggleMonitoring}
+            onClear={clearLatencyData}
+          />
+        </div>
+
+        {/* Tabs */}
         <div className="flex space-x-1 bg-surface p-1 rounded-xl shadow-sm max-w-lg mb-8 border border-ui-border">
           {['products', 'categories', 'orders'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all capitalize ${activeTab === tab ? 'bg-primary text-black font-bold shadow-lg shadow-primary/20' : 'text-text-secondary hover:text-text-primary hover:bg-background'}`}>
