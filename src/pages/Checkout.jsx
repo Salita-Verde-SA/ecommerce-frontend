@@ -69,6 +69,38 @@ const Checkout = () => {
 
   const handleAddressChange = (e) => setNewAddress({ ...newAddress, [e.target.name]: e.target.value });
 
+  // Nueva función para guardar dirección sin proceder al pago
+  const handleSaveNewAddress = async () => {
+    if (!newAddress.street || !newAddress.city) {
+      return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
+    }
+    
+    setLoading(true);
+    try {
+      const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
+      const newAddrId = savedAddr.id || savedAddr.id_key;
+      
+      // Recargar lista de direcciones
+      await loadAddresses();
+      
+      // Seleccionar la nueva dirección
+      setSelectedAddressId(newAddrId);
+      
+      // Volver a mostrar la lista
+      setIsAddingAddress(false);
+      
+      // Limpiar formulario
+      setNewAddress({ street: '', number: '', city: '' });
+      
+      showAlert('success', '¡Guardada!', 'La dirección ha sido guardada correctamente.');
+    } catch (error) {
+      console.error(error);
+      showAlert('error', 'Error', 'No se pudo guardar la dirección. Inténtalo nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCardChange = (e) => {
     const { name, value } = e.target;
     if (name === 'number') {
@@ -236,6 +268,27 @@ const Checkout = () => {
                         <label className="text-xs text-text-secondary uppercase font-bold ml-1 mb-1 block">Ciudad</label>
                         <input name="city" value={newAddress.city} onChange={handleAddressChange} className="w-full p-3 bg-surface border border-ui-border rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Ciudad Autónoma de Buenos Aires" />
                       </div>
+                    </div>
+                    
+                    {/* Botón para guardar la dirección */}
+                    <div className="mt-6 flex justify-end gap-3">
+                      {addresses.length > 0 && (
+                        <button 
+                          type="button"
+                          onClick={() => { setIsAddingAddress(false); if(addresses.length > 0) setSelectedAddressId(addresses[0].id); }}
+                          className="px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary bg-surface border border-ui-border rounded-xl transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      <button 
+                        type="button"
+                        onClick={handleSaveNewAddress}
+                        disabled={loading}
+                        className="px-6 py-2.5 text-sm font-bold bg-primary hover:bg-primary-hover text-black rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2 disabled:opacity-70"
+                      >
+                        {loading ? <Loader className="animate-spin" size={16}/> : <><Check size={16}/> Guardar Dirección</>}
+                      </button>
                     </div>
                   </motion.div>
                 )}

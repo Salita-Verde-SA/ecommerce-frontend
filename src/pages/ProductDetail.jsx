@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, ShoppingCart, ArrowLeft, Minus, Plus, Truck, ShieldCheck, User as UserIcon, Tag } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Minus, Plus, Truck, ShieldCheck, User as UserIcon, Tag, Package, Layers } from 'lucide-react';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
 import { reviewService } from '../services/reviewService';
@@ -30,14 +30,12 @@ const ProductDetail = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Obtenemos producto, categorías y reseñas en paralelo
         const [prodData, categories, reviewData] = await Promise.all([
           productService.getById(id),
           categoryService.getAll(),
           reviewService.getByProduct(id)
         ]);
         
-        // Cruzamos para obtener el nombre de categoría correcto
         const category = categories.find(c => c.id === prodData.category_id);
         const productWithCategory = {
           ...prodData,
@@ -78,7 +76,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Breadcrumb / Back Navigation */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center text-text-secondary hover:text-primary transition-colors text-sm font-medium group">
@@ -87,84 +85,94 @@ const ProductDetail = () => {
           </Link>
         </div>
 
-        {/* Product Main Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-          {/* Image Column */}
-          <div className="lg:col-span-7">
-            {/* Badge de categoría FUERA de la imagen */}
-            <div className="mb-4">
+        {/* Product Main Section - Nuevo diseño sin imagen */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-surface rounded-3xl border border-ui-border overflow-hidden shadow-2xl shadow-black/20 mb-16"
+        >
+          {/* Header con gradiente */}
+          <div className="bg-gradient-to-br from-background via-background to-primary/10 p-8 pb-6 border-b border-ui-border">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
               <span className="inline-flex items-center gap-1.5 bg-surface border border-ui-border text-primary px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
                 <Tag size={12}/> {product.category_name}
               </span>
+              <div className="flex items-center bg-surface border border-ui-border rounded-lg px-2.5 py-1.5 gap-1.5">
+                <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                <span className="text-sm font-bold text-text-primary">{product.rating.toFixed(1)}</span>
+                <span className="text-text-muted text-xs">({reviews.length} opiniones)</span>
+              </div>
+              <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${product.stock > 0 ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                {product.stock > 0 ? `${product.stock} en stock` : 'Agotado'}
+              </span>
             </div>
-            
-            <div className="bg-surface rounded-3xl border border-ui-border overflow-hidden relative group h-full min-h-[400px] flex items-center justify-center p-8 shadow-2xl shadow-black/20">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <motion.img 
-                initial={{ opacity: 0, scale: 0.95 }} 
-                animate={{ opacity: 1, scale: 1 }} 
-                src={product.image_url} 
-                alt={product.name} 
-                className="w-full max-h-[500px] object-contain drop-shadow-xl relative z-10 mix-blend-multiply dark:mix-blend-normal" 
-              />
-              {/* Badge removido de aquí */}
+
+            <div className="flex items-start gap-6">
+              {/* Icono decorativo grande */}
+              <div className="hidden sm:flex w-24 h-24 bg-primary/10 rounded-2xl items-center justify-center border border-primary/20 shrink-0">
+                <Package size={48} className="text-primary" />
+              </div>
+              
+              <div className="flex-grow">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mb-3 tracking-tight leading-tight">
+                  {product.name}
+                </h1>
+                <p className="text-text-secondary text-base leading-relaxed font-light max-w-2xl">
+                  {product.description || 'Producto de alta calidad disponible en TechStore. Diseñado para ofrecer el mejor rendimiento y durabilidad.'}
+                </p>
+              </div>
             </div>
           </div>
-          
-          {/* Info Column */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center bg-surface border border-ui-border rounded-lg px-2 py-1 gap-1">
-                  <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                  <span className="text-sm font-bold text-text-primary">{product.rating.toFixed(1)}</span>
-                </div>
-                <span className="text-text-muted text-sm">({reviews.length} opiniones)</span>
-              </div>
 
-              <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mb-4 tracking-tight leading-tight">
-                {product.name}
-              </h1>
-
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-ui-border border-dashed">
-                <span className="text-4xl font-bold text-primary tracking-tight">
+          {/* Cuerpo con precio y acciones */}
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Columna izquierda: Precio */}
+              <div>
+                <span className="text-sm text-text-muted uppercase tracking-wider font-medium block mb-2">Precio</span>
+                <span className="text-5xl font-bold text-primary tracking-tight block mb-6">
                   ${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${product.stock > 0 ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                  {product.stock > 0 ? 'Disponible' : 'Agotado'}
-                </span>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm text-text-secondary">
+                  <div className="flex items-center gap-2 bg-background p-3 rounded-xl border border-ui-border">
+                    <Truck size={18} className="text-primary"/> 
+                    <span>Envío gratis disponible</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-background p-3 rounded-xl border border-ui-border">
+                    <ShieldCheck size={18} className="text-primary"/> 
+                    <span>Garantía de 2 años</span>
+                  </div>
+                </div>
               </div>
 
-              <p className="text-text-secondary text-base leading-relaxed mb-8 font-light">
-                {product.description}
-              </p>
-              
-              <div className="bg-surface rounded-2xl p-6 border border-ui-border shadow-sm mb-8 space-y-6">
-                <div className="flex items-center justify-between">
+              {/* Columna derecha: Acciones */}
+              <div className="bg-background rounded-2xl p-6 border border-ui-border">
+                <div className="flex items-center justify-between mb-6">
                   <span className="font-medium text-text-primary">Cantidad</span>
-                  <div className="flex items-center bg-background rounded-lg border border-ui-border p-1">
-                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-surface rounded-md transition-colors"><Minus size={16} /></button>
-                    <span className="w-10 text-center font-bold text-text-primary tabular-nums">{quantity}</span>
-                    <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-surface rounded-md transition-colors"><Plus size={16} /></button>
+                  <div className="flex items-center bg-surface rounded-lg border border-ui-border p-1">
+                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-background rounded-md transition-colors"><Minus size={18} /></button>
+                    <span className="w-12 text-center font-bold text-text-primary tabular-nums text-lg">{quantity}</span>
+                    <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-background rounded-md transition-colors"><Plus size={18} /></button>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-text-muted mb-6 pb-6 border-b border-ui-border border-dashed">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-text-primary text-lg">${(product.price * quantity).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
 
                 <button 
                   onClick={handleAddToCart} 
                   disabled={product.stock === 0} 
-                  className="w-full bg-primary hover:bg-primary-hover text-text-inverse py-3.5 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full bg-primary hover:bg-primary-hover text-text-inverse py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
-                  <ShoppingCart size={20} className="group-hover:rotate-12 transition-transform"/> Agregar al Carrito
+                  <ShoppingCart size={22} className="group-hover:rotate-12 transition-transform"/> Agregar al Carrito
                 </button>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs text-text-secondary">
-                <div className="flex items-center gap-2"><Truck size={16} className="text-primary"/> Envío gratis disponible</div>
-                <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-primary"/> Garantía de 2 años</div>
-              </div>
-            </motion.div>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Reviews Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 border-t border-ui-border pt-16">

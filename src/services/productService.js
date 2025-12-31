@@ -1,8 +1,5 @@
 import api from '../config/api';
 
-// Imagen placeholder cuando el producto no tiene imagen
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=800&q=80";
-
 // Helper para normalizar productos del backend
 // CORRECCIÓN: Ahora acepta un 'calculatedRating' opcional para sobrescribir el del backend
 const normalizeProduct = (product, calculatedRating = null) => ({
@@ -14,7 +11,6 @@ const normalizeProduct = (product, calculatedRating = null) => ({
   stock: product.stock,
   category_id: product.category_id,
   category_name: product.category?.name || 'Sin categoría',
-  image_url: DEFAULT_IMAGE, 
   // Prioridad: Rating calculado > Rating del backend > 0 (si no hay reviews)
   rating: calculatedRating !== null ? calculatedRating : (product.rating || 0)
 });
