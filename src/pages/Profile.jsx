@@ -3,7 +3,8 @@ import { useAuthStore } from '../store/useAuthStore';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
 import { billService } from '../services/billService';
-import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle } from 'lucide-react';
+import { clientService } from '../services/clientService';
+import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle, Edit2, Save, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AddressForm from '../components/admin/AddressForm';
@@ -11,7 +12,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import AlertModal from '../components/ui/AlertModal';
 
 const Profile = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser } = useAuthStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('orders');
   
@@ -20,6 +21,16 @@ const Profile = () => {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Estado para la edición de perfil
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    lastname: '',
+    email: '',
+    telephone: ''
+  });
+  const [updatingProfile, setUpdatingProfile] = useState(false);
 
   // Modales
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -57,14 +68,93 @@ const Profile = () => {
         setLoading(false); 
       }
     };
-    fetchData();
-  }, [activeTab, user.id_key]);
+    if (user?.id_key) {
+      fetchData();
+    }
+  }, [activeTab, user?.id_key]);
+
+  // Inicializar formulario de edición cuando se carga el usuario o se activa la edición
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        name: user.name || '',
+        lastname: user.lastname || '',
+        email: user.email || '',
+        telephone: user.telephone || ''
+      });
+    }
+  }, [user]);
 
   const handleLogout = () => { 
     logout(); 
     navigate('/'); 
   };
 
+  // --- LÓGICA DE ACTUALIZACIÓN DE PERFIL ---
+  const handleEditToggle = () => {
+    // Si cancelamos, restauramos los datos originales
+    if (isEditing) {
+      setEditForm({
+        name: user.name || '',
+        lastname: user.lastname || '',
+        email: user.email || '',
+        telephone: user.telephone || ''
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    
+    if (!editForm.name.trim() || !editForm.lastname.trim() || !editForm.email.trim()) {
+      showAlert('warning', 'Campos requeridos', 'Nombre, Apellido y Email son obligatorios.');
+      return;
+    }
+
+    setUpdatingProfile(true);
+    try {
+      // CORRECCIÓN CRÍTICA:
+      // Solo enviamos los campos editables. 
+      // NO enviar 'id_key', 'addresses' ni 'orders' en el body para evitar conflictos (Error 500).
+      const payload = {
+        name: editForm.name,
+        lastname: editForm.lastname,
+        email: editForm.email,
+        telephone: editForm.telephone
+      };
+
+      // El ID va SOLO en la URL (primer argumento), el payload limpio va en el body (segundo argumento)
+      const updatedData = await clientService.update(user.id_key, payload);
+      
+      // Actualizamos el estado global de autenticación
+      updateUser({
+        ...user,
+        name: updatedData.name,
+        lastname: updatedData.lastname,
+        email: updatedData.email,
+        telephone: updatedData.telephone
+      });
+
+      setIsEditing(false);
+      showAlert('success', 'Perfil Actualizado', 'Tus datos han sido modificados correctamente.');
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err.response?.data?.detail || 'No se pudieron actualizar los datos. Verifica el email o intenta más tarde.';
+      showAlert('error', 'Error', errorMsg);
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setEditForm({
+      ...editForm,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // --- LÓGICA DE DIRECCIONES ---
   const handleDeleteAddress = (address) => {
     const addressId = address.id || address.id_key;
     if (!addressId) {
@@ -307,29 +397,94 @@ const Profile = () => {
 
                 {activeTab === 'info' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-surface p-8 rounded-2xl shadow-sm border border-ui-border">
-                    <h2 className="text-xl font-bold text-text-primary mb-6">Información Personal</h2>
-                    <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-xl font-bold text-text-primary">Información Personal</h2>
+                      
+                      {!isEditing ? (
+                        <button 
+                          onClick={handleEditToggle} 
+                          className="flex items-center gap-2 text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-primary/20"
+                        >
+                          <Edit2 size={16} /> Editar
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                           <button 
+                            onClick={handleEditToggle}
+                            disabled={updatingProfile} 
+                            className="flex items-center gap-2 text-text-secondary hover:text-text-primary bg-background border border-ui-border hover:border-text-primary px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <X size={16} /> Cancelar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <form onSubmit={handleProfileUpdate} className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="text-sm text-text-secondary block mb-1">Nombre</label>
-                          <input disabled value={user?.name || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary font-medium" />
+                          <input 
+                            name="name"
+                            value={isEditing ? editForm.name : (user?.name || '')} 
+                            onChange={handleInputChange}
+                            disabled={!isEditing || updatingProfile}
+                            className={`w-full p-3 rounded-xl border transition-all ${isEditing ? 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary' : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'}`} 
+                          />
                         </div>
                         <div>
                           <label className="text-sm text-text-secondary block mb-1">Apellido</label>
-                          <input disabled value={user?.lastname || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary font-medium" />
+                          <input 
+                            name="lastname"
+                            value={isEditing ? editForm.lastname : (user?.lastname || '')} 
+                            onChange={handleInputChange}
+                            disabled={!isEditing || updatingProfile}
+                            className={`w-full p-3 rounded-xl border transition-all ${isEditing ? 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary' : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'}`} 
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="text-sm text-text-secondary block mb-1">Email</label>
-                          <input disabled value={user?.email || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary" />
+                          <input 
+                            name="email"
+                            type="email"
+                            value={isEditing ? editForm.email : (user?.email || '')} 
+                            onChange={handleInputChange}
+                            disabled={!isEditing || updatingProfile}
+                            className={`w-full p-3 rounded-xl border transition-all ${isEditing ? 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary' : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'}`} 
+                          />
                         </div>
                         <div>
                           <label className="text-sm text-text-secondary block mb-1">Teléfono</label>
-                          <input disabled value={user?.telephone || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary" />
+                          <input 
+                            name="telephone"
+                            value={isEditing ? editForm.telephone : (user?.telephone || '')} 
+                            onChange={handleInputChange}
+                            disabled={!isEditing || updatingProfile}
+                            className={`w-full p-3 rounded-xl border transition-all ${isEditing ? 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary' : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'}`} 
+                          />
                         </div>
                       </div>
-                    </div>
+
+                      {isEditing && (
+                        <div className="flex justify-end pt-4 border-t border-ui-border mt-4">
+                          <button 
+                            type="submit"
+                            disabled={updatingProfile}
+                            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-black font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-70"
+                          >
+                            {updatingProfile ? (
+                              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <Save size={18} /> Guardar Cambios
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </form>
                   </motion.div>
                 )}
               </>
