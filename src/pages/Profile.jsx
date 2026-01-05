@@ -3,7 +3,6 @@ import { useAuthStore } from '../store/useAuthStore';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
 import { billService } from '../services/billService';
-import { clientService } from '../services/clientService';
 import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +41,6 @@ const Profile = () => {
           setOrders(data);
         } else if (activeTab === 'addresses') {
           const data = await addressService.getMyAddresses(user.id_key);
-          // CORRECCIÓN: Normalizamos para asegurar que 'id' exista siempre (fallback a id_key)
           const normalizedAddresses = data.map(addr => ({
             ...addr,
             id: addr.id || addr.id_key
@@ -68,7 +66,6 @@ const Profile = () => {
   };
 
   const handleDeleteAddress = (address) => {
-    // Alerta de seguridad: nos aseguramos de tener un ID válido antes de abrir el modal
     const addressId = address.id || address.id_key;
     if (!addressId) {
       showAlert('error', 'Error', 'No se pudo identificar la dirección para eliminar.');
@@ -82,9 +79,7 @@ const Profile = () => {
       onConfirm: async () => {
         setConfirmLoading(true);
         try {
-          // Usamos el ID validado
           await addressService.delete(addressId);
-          // Filtramos usando el ID validado para actualizar el estado local
           setAddresses(prevAddresses => prevAddresses.filter(a => (a.id || a.id_key) !== addressId));
           setConfirmModal({ ...confirmModal, isOpen: false });
           showAlert('success', 'Eliminada', 'La dirección ha sido eliminada correctamente.');
@@ -112,7 +107,6 @@ const Profile = () => {
         client_id: user.id_key
       });
       
-      // CORRECCIÓN: Normalizamos también la nueva dirección antes de agregarla al estado
       const normalizedNewAddress = {
         ...newAddress,
         id: newAddress.id || newAddress.id_key
@@ -325,18 +319,14 @@ const Profile = () => {
                           <input disabled value={user?.lastname || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary font-medium" />
                         </div>
                       </div>
-                      <div>
-                        <label className="text-sm text-text-secondary block mb-1">Email</label>
-                        <input disabled value={user?.email || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary" />
-                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm text-text-secondary block mb-1">Rol</label>
-                          <input disabled value={user?.role || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary capitalize" />
+                          <label className="text-sm text-text-secondary block mb-1">Email</label>
+                          <input disabled value={user?.email || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary" />
                         </div>
                         <div>
-                          <label className="text-sm text-text-secondary block mb-1">ID de Usuario</label>
-                          <input disabled value={user?.id || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary font-mono" />
+                          <label className="text-sm text-text-secondary block mb-1">Teléfono</label>
+                          <input disabled value={user?.telephone || ''} className="w-full p-3 bg-background rounded-xl border border-ui-border text-text-primary" />
                         </div>
                       </div>
                     </div>
