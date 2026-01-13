@@ -17,8 +17,7 @@ import { motion } from 'framer-motion';
 /**
  * Componente de gráfico de latencia en tiempo real.
  * Muestra la latencia de la base de datos obtenida del endpoint /health_check
- * 
- * Umbrales según documentación del backend:
+ * * Umbrales según documentación del backend:
  * - Healthy: < 100ms (verde)
  * - Warning: 100-500ms (amarillo)
  * - Critical: > 500ms (rojo)
@@ -151,7 +150,7 @@ const LatencyChart = ({
       className="bg-surface rounded-2xl border border-ui-border p-6 shadow-lg"
     >
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${isOffline ? 'bg-red-500/10' : 'bg-primary/10'}`}>
             {isOffline ? <ServerOff className="text-red-400" size={24} /> : <Activity className="text-primary" size={24} />}
@@ -164,7 +163,7 @@ const LatencyChart = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {/* Estado actual */}
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${statusInfo.bgColor}`}>
             {statusInfo.icon}
@@ -204,11 +203,11 @@ const LatencyChart = ({
         </div>
       )}
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      {/* Estadísticas rápidas: Ajustado para responsividad */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-background rounded-xl p-4 border border-ui-border">
           <p className="text-xs text-text-secondary mb-1">Actual</p>
-          <p className={`text-2xl font-bold ${
+          <p className={`text-lg md:text-2xl font-bold ${
             isOffline ? 'text-red-400' :
             lastLatency === null ? 'text-gray-400' :
             lastLatency > THRESHOLDS.critical ? 'text-red-400' :
@@ -216,31 +215,31 @@ const LatencyChart = ({
             'text-green-400'
           }`}>
             {isOffline ? '—' : (lastLatency !== null ? `${lastLatency.toFixed(1)}` : '--')}
-            {!isOffline && <span className="text-sm font-normal text-text-secondary ml-1">ms</span>}
+            {!isOffline && <span className="text-xs md:text-sm font-normal text-text-secondary ml-1">ms</span>}
           </p>
         </div>
         
         <div className="bg-background rounded-xl p-4 border border-ui-border">
           <p className="text-xs text-text-secondary mb-1">Promedio</p>
-          <p className="text-2xl font-bold text-primary">
+          <p className="text-lg md:text-2xl font-bold text-primary">
             {avgLatency}
-            <span className="text-sm font-normal text-text-secondary ml-1">ms</span>
+            <span className="text-xs md:text-sm font-normal text-text-secondary ml-1">ms</span>
           </p>
         </div>
         
         <div className="bg-background rounded-xl p-4 border border-ui-border">
           <p className="text-xs text-text-secondary mb-1">Mínimo</p>
-          <p className="text-2xl font-bold text-green-400">
+          <p className="text-lg md:text-2xl font-bold text-green-400">
             {minLatency}
-            <span className="text-sm font-normal text-text-secondary ml-1">ms</span>
+            <span className="text-xs md:text-sm font-normal text-text-secondary ml-1">ms</span>
           </p>
         </div>
         
         <div className="bg-background rounded-xl p-4 border border-ui-border">
           <p className="text-xs text-text-secondary mb-1">Máximo</p>
-          <p className="text-2xl font-bold text-orange-400">
+          <p className="text-lg md:text-2xl font-bold text-orange-400">
             {maxLatency}
-            <span className="text-sm font-normal text-text-secondary ml-1">ms</span>
+            <span className="text-xs md:text-sm font-normal text-text-secondary ml-1">ms</span>
           </p>
         </div>
       </div>
@@ -343,8 +342,8 @@ const LatencyChart = ({
       </div>
 
       {/* Footer con información adicional */}
-      <div className="mt-4 pt-4 border-t border-ui-border flex justify-between items-center text-xs text-text-secondary">
-        <div className="flex items-center gap-4">
+      <div className="mt-4 pt-4 border-t border-ui-border flex flex-col sm:flex-row justify-between items-center text-xs text-text-secondary gap-2">
+        <div className="flex flex-wrap justify-center items-center gap-4">
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-green-400"></span>
             Healthy (&lt;100ms)
