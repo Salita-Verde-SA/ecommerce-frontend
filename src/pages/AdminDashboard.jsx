@@ -11,7 +11,7 @@ import LatencyChart from '../components/admin/LatencyChart';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AlertModal from '../components/ui/AlertModal';
 import { useLatencyMonitor } from '../hooks/useLatencyMonitor';
-import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle, Layers } from 'lucide-react'; // CORRECCIÓN: Agregué 'Layers' a los imports
+import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle, Layers, Cpu } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -262,13 +262,18 @@ const AdminDashboard = () => {
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 bg-surface p-6 rounded-2xl shadow-lg border border-ui-border">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Panel de Administración</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${healthColor} ${connectionStatus !== 'offline' && health?.status !== 'offline' ? 'animate-pulse' : ''}`}></span>
-              <p className="text-xs font-medium text-text-secondary">
-                Sistema: {getHealthLabel()}
-              </p>
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-primary/20 rounded-lg">
+               <Cpu size={24} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-text-primary">Panel Nexus Hardware</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${healthColor} ${connectionStatus !== 'offline' && health?.status !== 'offline' ? 'animate-pulse' : ''}`}></span>
+                <p className="text-xs font-medium text-text-secondary">
+                  Sistema: {getHealthLabel()}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex gap-4 mt-4 md:mt-0">

@@ -93,9 +93,9 @@ const Home = () => {
               <Cpu size={16} /> Nueva Colección 2025
             </span>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-text-primary mb-8 tracking-tight leading-tight">
-              TechStore <br />
+              Nexus <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-300% animate-gradient drop-shadow-[0_0_15px_rgba(0,229,255,0.3)]">
-                Cyber Future
+                Hardware
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed font-light">

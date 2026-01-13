@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Loader, Phone, AlertCircle, User } from 'lucide-react';
+import { Mail, Loader, Phone, AlertCircle, User, Cpu } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { clientService } from '../services/clientService';
 
@@ -103,11 +103,16 @@ const Login = () => {
         className="max-w-md w-full space-y-8 bg-surface p-10 rounded-3xl shadow-2xl shadow-black/50 border border-ui-border relative z-10"
       >
         <div className="text-center">
+          <div className="flex justify-center mb-4">
+             <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
+               <Cpu size={32} className="text-primary" />
+             </div>
+          </div>
           <h2 className="text-3xl font-bold text-text-primary tracking-tight">
-            {isLogin ? 'Bienvenido' : 'Crear Cuenta'}
+             Nexus Hardware
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            {isLogin ? 'Ingresa con tu email registrado' : 'Regístrate con tu email'}
+            {isLogin ? 'Ingresa con tu email registrado' : 'Regístrate para continuar'}
           </p>
         </div>
 
