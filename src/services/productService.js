@@ -1,7 +1,6 @@
 import api from '../config/api';
 
 // Helper para normalizar productos del backend
-// CORRECCIÓN: Ahora acepta un 'calculatedRating' opcional para sobrescribir el del backend
 const normalizeProduct = (product, calculatedRating = null) => ({
   id: product.id_key,           // Alias para compatibilidad frontend
   id_key: product.id_key,
@@ -10,13 +9,17 @@ const normalizeProduct = (product, calculatedRating = null) => ({
   price: parseFloat(product.price),
   stock: product.stock,
   category_id: product.category_id,
-  category_name: product.category?.name || 'Sin categoría',
+  
+  // CORRECCIÓN: El backend envía 'category_name' como campo directo (ProductSchema).
+  // Antes buscaba product.category.name y por eso fallaba.
+  category_name: product.category_name || product.category?.name || 'Sin categoría',
+  
   // Prioridad: Rating calculado > Rating del backend > 0 (si no hay reviews)
   rating: calculatedRating !== null ? calculatedRating : (product.rating || 0)
 });
 
 export const productService = {
-  // OBTENER TODOS - CORREGIDO: Calcula promedio de estrellas
+  // OBTENER TODOS
   getAll: async () => {
     try {
       // Obtenemos productos y reseñas en paralelo para eficiencia
@@ -48,7 +51,7 @@ export const productService = {
     }
   },
 
-  // OBTENER POR ID - CORREGIDO: Calcula promedio de estrellas para el detalle
+  // OBTENER POR ID
   getById: async (id) => {
     try {
       const [productRes, reviewsRes] = await Promise.all([
@@ -90,14 +93,15 @@ export const productService = {
 
   // ACTUALIZAR PRODUCTO (PUT) - Solo Admin
   update: async (id, productData) => {
+    // Recordatorio: NO enviamos id_key en el body para evitar conflictos con el backend
     const payload = {
-      id_key: parseInt(id),
       name: productData.name,
       // description eliminada
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
+    
     const response = await api.put(`/products/${id}`, payload);
     return normalizeProduct(response.data);
   },

@@ -11,7 +11,7 @@ import LatencyChart from '../components/admin/LatencyChart';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AlertModal from '../components/ui/AlertModal';
 import { useLatencyMonitor } from '../hooks/useLatencyMonitor';
-import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle, Activity } from 'lucide-react';
+import { Package, ShoppingBag, Plus, Edit, Trash2, Search, Home, LogOut, Tag, Eye, X, RefreshCw, AlertCircle, Layers, Cpu } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,13 +28,13 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Hook de monitoreo de latencia (actualiza cada 5 segundos, mantiene 30 puntos)
+  // Hook de monitoreo de latencia
   const { 
     latencyData, 
     currentHealth, 
     isMonitoring, 
     error: latencyError,
-    connectionStatus,  // Añadir connectionStatus
+    connectionStatus,
     startMonitoring,
     stopMonitoring,
     clearData: clearLatencyData
@@ -106,7 +106,6 @@ const AdminDashboard = () => {
     }
   }, [activeTab]);
 
-  // Sincronizar health del monitor con el estado local
   useEffect(() => {
     if (currentHealth) {
       setHealth(currentHealth);
@@ -250,26 +249,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filtrado que incluye búsqueda por nombre y categoría
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.category_name && p.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
   
-  // Actualizar healthColor para reflejar el estado offline
   const getHealthColor = () => {
-    // Si hay error de conexión o el estado es offline
     if (connectionStatus === 'offline' || health?.status === 'offline' || health?.errorType) {
       return 'bg-red-500';
     }
-    
     switch (health?.status) {
-      case 'healthy':
-        return 'bg-green-500';
-      case 'warning':
-        return 'bg-yellow-500';
-      case 'degraded':
-        return 'bg-orange-500';
-      case 'critical':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
+      case 'healthy': return 'bg-green-500';
+      case 'warning': return 'bg-yellow-500';
+      case 'degraded': return 'bg-orange-500';
+      case 'critical': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -295,13 +290,18 @@ const AdminDashboard = () => {
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 bg-surface p-6 rounded-2xl shadow-lg border border-ui-border">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Panel de Administración</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${healthColor} ${connectionStatus !== 'offline' && health?.status !== 'offline' ? 'animate-pulse' : ''}`}></span>
-              <p className="text-xs font-medium text-text-secondary">
-                Sistema: {getHealthLabel()}
-              </p>
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-primary/20 rounded-lg">
+               <Cpu size={24} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-text-primary">Panel Nexus Hardware</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${healthColor} ${connectionStatus !== 'offline' && health?.status !== 'offline' ? 'animate-pulse' : ''}`}></span>
+                <p className="text-xs font-medium text-text-secondary">
+                  Sistema: {getHealthLabel()}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex gap-4 mt-4 md:mt-0">
@@ -317,7 +317,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Gráfico de Latencia - Siempre visible en la parte superior */}
         <div className="mb-8">
           <LatencyChart
             latencyData={latencyData}
@@ -329,7 +328,6 @@ const AdminDashboard = () => {
           />
         </div>
 
-        {/* Tabs */}
         <div className="flex space-x-1 bg-surface p-1 rounded-xl shadow-sm max-w-lg mb-8 border border-ui-border">
           {['products', 'categories', 'orders'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all capitalize ${activeTab === tab ? 'bg-primary text-black font-bold shadow-lg shadow-primary/20' : 'text-text-secondary hover:text-text-primary hover:bg-background'}`}>
@@ -343,7 +341,7 @@ const AdminDashboard = () => {
             <div className="flex justify-between mb-6 gap-4">
               <div className="relative flex-grow max-w-md">
                 <Search className="absolute left-3 top-2.5 text-text-secondary" size={20} />
-                <input type="text" placeholder="Buscar producto..." className="w-full pl-10 pr-4 py-2.5 border border-ui-border rounded-xl outline-none text-text-primary bg-surface focus:border-primary" onChange={(e) => setSearchTerm(e.target.value)} />
+                <input type="text" placeholder="Buscar producto o categoría..." className="w-full pl-10 pr-4 py-2.5 border border-ui-border rounded-xl outline-none text-text-primary bg-surface focus:border-primary" onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
               <button onClick={handleCreateProduct} className="bg-primary hover:bg-primary-hover text-black font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20"><Plus size={18}/> Nuevo</button>
             </div>
@@ -355,6 +353,8 @@ const AdminDashboard = () => {
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase">Producto</th>
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase">Precio</th>
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase">Stock</th>
+                    {/* CORRECCIÓN: Columna de Categoría agregada */}
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Categoría</th>
                     <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase">Acciones</th>
                   </tr>
                 </thead>
@@ -364,6 +364,13 @@ const AdminDashboard = () => {
                       <td className="p-4 font-medium text-text-primary">{p.name}</td>
                       <td className="p-4 font-bold text-primary">${p.price}</td>
                       <td className="p-4 text-text-secondary">{p.stock} un.</td>
+                      {/* CORRECCIÓN: Celda de Categoría agregada */}
+                      <td className="p-4 text-text-secondary">
+                        <div className="flex items-center gap-2">
+                           <Layers size={14} className="text-text-muted"/>
+                           {p.category_name || 'Sin categoría'}
+                        </div>
+                      </td>
                       <td className="p-4 text-right space-x-2">
                         <button onClick={() => handleEditProduct(p)} className="text-secondary-light hover:bg-secondary-light/20 p-2 rounded-lg"><Edit size={18}/></button>
                         <button onClick={() => handleDeleteProduct(p)} className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg"><Trash2 size={18}/></button>
@@ -376,6 +383,7 @@ const AdminDashboard = () => {
           </motion.div>
         )}
 
+        {/* ... (Resto del componente sin cambios: Tabs de categorías y órdenes, modales, etc.) ... */}
         {activeTab === 'categories' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between mb-6">

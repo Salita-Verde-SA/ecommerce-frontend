@@ -3,19 +3,19 @@ import api from '../config/api';
 export const clientService = {
   // GET /clients/ - Listar todos los clientes
   getAll: async (skip = 0, limit = 100) => {
-    const response = await api.get(`/clients/?skip=${skip}&limit=${limit}`);  // Trailing slash añadido
+    const response = await api.get(`/clients/?skip=${skip}&limit=${limit}`);
     return response.data;
   },
 
   // GET /clients/{id} - Obtener cliente por ID
   getById: async (id) => {
-    const response = await api.get(`/clients/${id}/`);  // Trailing slash añadido
+    const response = await api.get(`/clients/${id}/`); 
     return response.data;
   },
 
   // POST /clients/ - Crear nuevo cliente
   create: async (clientData) => {
-    const response = await api.post('/clients/', {  // Trailing slash añadido
+    const response = await api.post('/clients/', {
       name: clientData.name,
       lastname: clientData.lastname,
       email: clientData.email,
@@ -25,17 +25,18 @@ export const clientService = {
   },
 
   // PUT /clients/{id} - Actualizar cliente
+  // CORRECCIÓN: Usamos el ID en la URL y enviamos solo los datos en el body
   update: async (id, clientData) => {
-    const response = await api.put(`/clients/${id}/`, clientData);  // Trailing slash añadido
+    const response = await api.put(`/clients/${id}`, clientData);
     return response.data;
   },
 
   // DELETE /clients/{id} - Eliminar cliente
   delete: async (id) => {
-    await api.delete(`/clients/${id}/`);  // Trailing slash añadido
+    await api.delete(`/clients/${id}/`);
   },
 
-  // Buscar cliente por email (usando getAll y filtrando)
+  // Buscar cliente por email
   findByEmail: async (email) => {
     const clients = await clientService.getAll();
     return clients.find(c => c.email === email);

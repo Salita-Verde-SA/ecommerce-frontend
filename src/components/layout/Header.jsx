@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X, Search, ChevronRight } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Search, ChevronRight, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -67,9 +67,9 @@ const Header = () => {
               className="flex-shrink-0 flex items-center gap-2 group"
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all">
-                <span className="text-text-inverse font-bold text-xl">T</span>
+                <Cpu size={20} className="text-text-inverse" />
               </div>
-              <span className="font-bold text-xl tracking-tight text-text-primary">TechStore</span>
+              <span className="font-bold text-xl tracking-tight text-text-primary">Nexus Hardware</span>
             </Link>
 
             {/* DESKTOP NAVIGATION */}

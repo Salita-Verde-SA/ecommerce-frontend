@@ -25,8 +25,7 @@ const Home = () => {
           categoryService.getAll()
         ]);
         
-        // CORRECCIÓN: Asignamos el nombre de la categoría manualmente cruzando los datos.
-        // El endpoint de productos solo devuelve category_id, por lo que category_name venía como 'Sin categoría'.
+        // Asignamos el nombre de la categoría manualmente cruzando los datos.
         const productsWithCategories = prodData.map(product => {
           const category = catData.find(c => c.id === product.category_id);
           return {
@@ -93,9 +92,9 @@ const Home = () => {
               <Cpu size={16} /> Nueva Colección 2025
             </span>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-text-primary mb-8 tracking-tight leading-tight">
-              TechStore <br />
+              Nexus <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-300% animate-gradient drop-shadow-[0_0_15px_rgba(0,229,255,0.3)]">
-                Cyber Future
+                Hardware
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed font-light">
@@ -160,8 +159,9 @@ const Home = () => {
       </section>
 
       <section id="productos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pb-32 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 border-b border-ui-border pb-6">
-          <div>
+        {/* CORRECCIÓN: Alineación centrada en móvil, a la izquierda en desktop */}
+        <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-4 border-b border-ui-border pb-6">
+          <div className="text-center md:text-left">
             <h2 className="text-4xl font-bold text-text-primary mb-3 tracking-tight">Catálogo <span className="text-primary">.NET</span></h2>
             <p className="text-text-secondary text-lg font-light">
               {searchQuery ? `Buscando: "${searchQuery}"` : `Mostrando ${filteredProducts.length} items en ${activeCategory}`}

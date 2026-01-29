@@ -1,5 +1,5 @@
 import React from 'react';
-import { Facebook, Twitter, Instagram, Mail, MapPin, Phone } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Mail, MapPin, Phone, Cpu } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -10,9 +10,9 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">T</span>
+                <Cpu size={20} className="text-white" />
               </div>
-              <span className="font-bold text-xl tracking-tight">TechStore</span>
+              <span className="font-bold text-xl tracking-tight">Nexus Hardware</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
               Tu destino premium para tecnología de vanguardia. Calidad, garantía y soporte en cada compra.
@@ -55,14 +55,14 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={16} className="text-primary" />
-                <span>soporte@techstore.com</span>
+                <span>soporte@nexushardware.com</span>
               </li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-500 text-sm">© 2025 TechStore. Todos los derechos reservados.</p>
+          <p className="text-gray-500 text-sm">© 2025 Nexus Hardware. Todos los derechos reservados.</p>
           <div className="flex space-x-6">
             <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter size={20} /></a>
