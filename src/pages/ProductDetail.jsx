@@ -62,13 +62,25 @@ const ProductDetail = () => {
       return;
     }
     try {
-      const created = await reviewService.create({ ...newReview, product_id: parseInt(id), user_id: user.id, user_name: user.name });
+      const created = await reviewService.create({ 
+        ...newReview, 
+        product_id: parseInt(id), 
+        user_id: user.id, 
+        user_name: user.name 
+      });
       setReviews([...reviews, created]);
       setNewReview({ rating: 5, comment: '' });
       showAlert('success', '¡Gracias!', 'Tu reseña ha sido publicada exitosamente.');
     } catch (error) { 
       console.error(error);
-      showAlert('error', 'Error', 'Ocurrió un error al publicar tu reseña. Inténtalo de nuevo.');
+      // Mensaje de error más específico basado en la respuesta
+      let errorMessage = 'Ocurrió un error al publicar tu reseña. Inténtalo de nuevo.';
+      if (error.response?.data?.detail) {
+        errorMessage = typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : 'Error de validación en los datos enviados.';
+      }
+      showAlert('error', 'Error', errorMessage);
     }
   };
 

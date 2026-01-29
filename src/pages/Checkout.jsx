@@ -5,6 +5,8 @@ import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { addressService } from '../services/addressService';
 import { orderService } from '../services/orderService';
+import { billService } from '../services/billService';
+import { orderDetailService } from '../services/orderDetailService';
 import AlertModal from '../components/ui/AlertModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,7 +32,7 @@ const Checkout = () => {
   // Estados de UI
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onCloseAction: null });
 
   // Redirección de seguridad
   useEffect(() => {
@@ -49,17 +51,26 @@ const Checkout = () => {
     try {
       const data = await addressService.getMyAddresses(user.id_key);
       
-      const normalizedAddresses = data.map(addr => ({
-        ...addr,
-        id: addr.id || addr.id_key 
-      }));
+      // Normalizar direcciones asegurando que 'id' siempre exista
+      const normalizedAddresses = data.map(addr => {
+        const normalizedId = addr.id_key || addr.id;
+        return {
+          ...addr,
+          id: normalizedId,
+          id_key: normalizedId
+        };
+      });
 
       setAddresses(normalizedAddresses);
 
       if (normalizedAddresses.length > 0) {
-        setSelectedAddressId(normalizedAddresses[0].id);
+        // Seleccionar la primera dirección automáticamente
+        const firstAddressId = normalizedAddresses[0].id;
+        setSelectedAddressId(firstAddressId);
         setIsAddingAddress(false);
       } else {
+        // Si no hay direcciones, mostrar formulario de nueva
+        setSelectedAddressId(null);
         setIsAddingAddress(true);
       }
     } catch (error) { 
@@ -78,16 +89,16 @@ const Checkout = () => {
     setLoading(true);
     try {
       const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
-      const newAddrId = savedAddr.id || savedAddr.id_key;
+      const newAddrId = savedAddr.id_key || savedAddr.id;
       
       // Recargar lista de direcciones
       await loadAddresses();
       
-      // Seleccionar la nueva dirección
-      setSelectedAddressId(newAddrId);
-      
-      // Volver a mostrar la lista
-      setIsAddingAddress(false);
+      // Forzar la selección de la nueva dirección después de recargar
+      setTimeout(() => {
+        setSelectedAddressId(newAddrId);
+        setIsAddingAddress(false);
+      }, 100);
       
       // Limpiar formulario
       setNewAddress({ street: '', number: '', city: '' });
@@ -119,51 +130,207 @@ const Checkout = () => {
     }
   };
 
-  const showAlert = (type, title, message) => setAlertModal({ isOpen: true, type, title, message });
+  // Función para validar la fecha de expiración de la tarjeta
+  const isCardExpired = (expiry) => {
+    if (!expiry || expiry.length < 5) return true;
+    
+    const [monthStr, yearStr] = expiry.split('/');
+    const month = parseInt(monthStr, 10);
+    const year = parseInt(`20${yearStr}`, 10); // Asumimos años 20XX
+    
+    if (isNaN(month) || isNaN(year)) return true;
+    if (month < 1 || month > 12) return true;
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // getMonth() es 0-indexed
+    
+    // Si el año es menor al actual, está expirada
+    if (year < currentYear) return true;
+    
+    // Si el año es igual al actual, verificar el mes
+    if (year === currentYear && month < currentMonth) return true;
+    
+    return false;
+  };
+
+  const showAlert = (type, title, message, onCloseAction = null) => setAlertModal({ isOpen: true, type, title, message, onCloseAction });
+
+  // Función para cerrar el modal y ejecutar acción opcional
+  const handleCloseAlert = () => {
+    const action = alertModal.onCloseAction;
+    setAlertModal({ ...alertModal, isOpen: false, onCloseAction: null });
+    
+    // Ejecutar la acción después de cerrar el modal si existe
+    if (action) {
+      action();
+    }
+  };
 
   const handlePayment = async () => {
-    let finalAddressId = selectedAddressId;
     setLoading(true);
 
     try {
+      let finalAddressId = null;
+
       // 1. Procesar Dirección (Nueva o Existente)
       if (isAddingAddress) {
+        // Crear nueva dirección
         if (!newAddress.street || !newAddress.city) {
           setLoading(false);
           return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
         }
         
         const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
-        finalAddressId = savedAddr.id || savedAddr.id_key;
+        finalAddressId = savedAddr.id_key || savedAddr.id;
         
-      } else if (!finalAddressId) {
+      } else {
+        // Usar dirección seleccionada existente
+        if (!selectedAddressId && addresses.length === 0) {
+          setLoading(false);
+          return showAlert('warning', 'Falta Dirección', 'Debes agregar una dirección de envío.');
+        }
+        
+        if (!selectedAddressId && addresses.length > 0) {
+          finalAddressId = addresses[0].id;
+        } else {
+          finalAddressId = selectedAddressId;
+        }
+      }
+
+      // Validación final de dirección
+      if (!finalAddressId) {
         setLoading(false);
         return showAlert('warning', 'Falta Dirección', 'Selecciona dónde enviar tu pedido.');
       }
 
-      // 2. Validar Tarjeta
-      if (cardData.number.replace(/\s/g, '').length < 16 || cardData.cvc.length < 3 || cardData.expiry.length < 5) {
+      // 2. Validar Tarjeta - Número y CVC
+      if (cardData.number.replace(/\s/g, '').length < 16) {
         setLoading(false);
-        return showAlert('error', 'Datos de Pago', 'Revisa los datos de tu tarjeta.');
+        return showAlert('error', 'Número de Tarjeta Inválido', 'El número de tarjeta debe tener 16 dígitos.');
+      }
+      
+      if (cardData.cvc.length < 3) {
+        setLoading(false);
+        return showAlert('error', 'Código de Seguridad Inválido', 'El código de seguridad (CVC) debe tener 3 dígitos.');
+      }
+      
+      if (cardData.expiry.length < 5) {
+        setLoading(false);
+        return showAlert('error', 'Fecha de Vencimiento Inválida', 'Ingresa la fecha de vencimiento en formato MM/YY.');
+      }
+      
+      // 3. Validar fecha de expiración
+      if (isCardExpired(cardData.expiry)) {
+        setLoading(false);
+        return showAlert('error', 'Tarjeta Expirada', 'La tarjeta ingresada está vencida. Por favor usa otra tarjeta.');
+      }
+      
+      // 4. Validar nombre del titular
+      if (!cardData.name || cardData.name.trim().length < 3) {
+        setLoading(false);
+        return showAlert('error', 'Nombre del Titular', 'Ingresa el nombre del titular de la tarjeta.');
       }
 
-      // 3. Crear Orden
-      const orderPayload = {
-        client_id: user.id_key,
+      // 5. Crear Factura primero (requerida por el schema de Order)
+      const billPayload = {
         total: finalTotal,
-        status: "PENDING",
-        payment_type: "CREDIT_CARD",
-        address_id: finalAddressId,
-        details: cart.map(i => ({ product_id: i.id_key, quantity: i.quantity, price: i.price }))
+        discount: shippingCost === 0 ? 25 : 0,
+        payment_type: 'card',
+        client_id: user.id_key
+      };
+      
+      let createdBill;
+      try {
+        createdBill = await billService.create(billPayload);
+      } catch (billError) {
+        console.error('Error creando factura:', billError);
+        console.error('Response data:', billError.response?.data);
+        
+        let errorMsg = 'Error al crear la factura.';
+        if (billError.response?.data?.detail) {
+          const detail = billError.response.data.detail;
+          if (typeof detail === 'string') {
+            errorMsg = detail;
+          } else if (Array.isArray(detail)) {
+            errorMsg = detail.map(err => {
+              const field = err.loc?.join('.') || 'campo';
+              return `${field}: ${err.msg}`;
+            }).join(' | ');
+          }
+        }
+        throw new Error(errorMsg);
+      }
+      
+      const billId = createdBill.id_key || createdBill.id;
+
+      // 4. Crear Orden con el bill_id
+      const orderPayload = {
+        client_id: parseInt(user.id_key),
+        bill_id: parseInt(billId),
+        total: parseFloat(finalTotal),
+        delivery_method: 3,
+        status: 1
       };
 
-      await orderService.createOrder(orderPayload);
+      let createdOrder;
+      try {
+        createdOrder = await orderService.createOrder(orderPayload);
+      } catch (orderError) {
+        console.error('Error creando orden:', orderError);
+        const errorMsg = orderError.response?.data?.detail;
+        throw new Error(typeof errorMsg === 'string' ? errorMsg : 'Error al crear la orden.');
+      }
+      
+      const orderId = createdOrder.id_key || createdOrder.id;
+
+      // 5. Crear detalles de orden para cada producto del carrito
+      for (const item of cart) {
+        try {
+          await orderDetailService.create({
+            order_id: parseInt(orderId),
+            product_id: parseInt(item.id_key || item.id),
+            quantity: parseInt(item.quantity),
+            price: parseFloat(item.price)
+          });
+        } catch (detailError) {
+          console.error('Error creando detalle:', detailError);
+          const errorMsg = detailError.response?.data?.detail;
+          if (typeof errorMsg === 'string' && errorMsg.includes('stock')) {
+            throw new Error(`Stock insuficiente para "${item.name}".`);
+          }
+          throw new Error(typeof errorMsg === 'string' ? errorMsg : `Error al agregar "${item.name}" al pedido.`);
+        }
+      }
       
       clearCart();
-      setSuccess(true);
+      
+      // Mostrar modal de éxito - al cerrarlo se mostrará la pantalla de éxito
+      showAlert(
+        'success', 
+        '¡Compra Exitosa!', 
+        `Tu pedido #${orderId} ha sido procesado correctamente. Recibirás un correo con los detalles del envío.`,
+        () => setSuccess(true)  // Esta función se ejecutará al cerrar el modal
+      );
+      
     } catch (error) {
-      console.error(error);
-      showAlert('error', 'Error', 'No se pudo procesar el pedido. Inténtalo nuevamente.');
+      console.error('Error en checkout:', error);
+      
+      let errorMessage = error.message || 'No se pudo procesar el pedido. Inténtalo nuevamente.';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          errorMessage = detail.map(err => {
+            const field = err.loc?.slice(-1)[0] || 'campo';
+            return `${field}: ${err.msg}`;
+          }).join('. ');
+        }
+      }
+      
+      showAlert('error', 'Error en el Pedido', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -386,7 +553,13 @@ const Checkout = () => {
           </div>
         </div>
       </div>
-      <AlertModal isOpen={alertModal.isOpen} onClose={() => setAlertModal({...alertModal, isOpen: false})} title={alertModal.title} message={alertModal.message} type={alertModal.type} />
+      <AlertModal 
+        isOpen={alertModal.isOpen} 
+        onClose={handleCloseAlert} 
+        title={alertModal.title} 
+        message={alertModal.message} 
+        type={alertModal.type} 
+      />
     </div>
   );
 };

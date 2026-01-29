@@ -30,15 +30,15 @@ export const orderService = {
     return response.data;
   },
 
-  // Crear orden
+  // Crear orden (corregido para coincidir con schema del backend)
   createOrder: async (orderData) => {
     const payload = {
       date: orderData.date || new Date().toISOString(),
       total: parseFloat(orderData.total),
-      delivery_method: orderData.delivery_method || 3,
-      status: orderData.status || 1,
-      client_id: orderData.client_id,
-      bill_id: orderData.bill_id
+      delivery_method: orderData.delivery_method || 3, // HOME_DELIVERY = 3
+      status: orderData.status || 1, // PENDING = 1
+      client_id: parseInt(orderData.client_id),
+      bill_id: parseInt(orderData.bill_id)
     };
     const response = await api.post('/orders/', payload);
     return response.data;

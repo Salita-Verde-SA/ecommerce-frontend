@@ -42,7 +42,6 @@ const Profile = () => {
           setOrders(data);
         } else if (activeTab === 'addresses') {
           const data = await addressService.getMyAddresses(user.id_key);
-          // CORRECCIÓN: Normalizamos para asegurar que 'id' exista siempre (fallback a id_key)
           const normalizedAddresses = data.map(addr => ({
             ...addr,
             id: addr.id || addr.id_key
@@ -54,7 +53,8 @@ const Profile = () => {
         }
       } catch (err) { 
         console.error(err);
-        setError('Error al cargar los datos. Intente nuevamente.');
+        // Usar modal en lugar de setError para errores de carga
+        showAlert('error', 'Error de Carga', 'No se pudieron cargar los datos. Intente nuevamente.');
       } finally { 
         setLoading(false); 
       }
@@ -126,14 +126,50 @@ const Profile = () => {
     }
   };
 
+  // Mapeo de status integer a string legible
+  const STATUS_MAP = {
+    1: 'Pendiente',
+    2: 'En Progreso',
+    3: 'Entregado',
+    4: 'Cancelado'
+  };
+
+  const getStatusText = (status) => {
+    if (typeof status === 'number') {
+      return STATUS_MAP[status] || 'Desconocido';
+    }
+    return status || 'Desconocido';
+  };
+
   const getStatusIcon = (status) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
+    // Normalizar: si es string, intentar convertir; si es número, usar directamente
+    const statusValue = typeof status === 'number' ? status : 
+      (typeof status === 'string' ? status.toLowerCase() : null);
+    
+    // Manejar como número (del backend)
+    if (typeof statusValue === 'number') {
+      switch (statusValue) {
+        case 3: // DELIVERED
+          return <CheckCircle size={16} className="text-green-400" />;
+        case 2: // IN_PROGRESS
+          return <Truck size={16} className="text-blue-400" />;
+        case 4: // CANCELED
+          return <AlertCircle size={16} className="text-red-400" />;
+        default: // PENDING (1) u otro
+          return <Clock size={16} className="text-yellow-400" />;
+      }
+    }
+    
+    // Fallback para strings (compatibilidad)
+    switch (statusValue) {
       case 'completed':
-      case 'completado': 
+      case 'completado':
+      case 'delivered':
+      case 'entregado':
         return <CheckCircle size={16} className="text-green-400" />;
       case 'shipped':
-      case 'enviado': 
+      case 'enviado':
+      case 'in_progress':
         return <Truck size={16} className="text-blue-400" />;
       default: 
         return <Clock size={16} className="text-yellow-400" />;
@@ -141,13 +177,34 @@ const Profile = () => {
   };
 
   const getStatusStyle = (status) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
+    // Normalizar: si es string, intentar convertir; si es número, usar directamente
+    const statusValue = typeof status === 'number' ? status : 
+      (typeof status === 'string' ? status.toLowerCase() : null);
+    
+    // Manejar como número (del backend)
+    if (typeof statusValue === 'number') {
+      switch (statusValue) {
+        case 3: // DELIVERED
+          return 'bg-green-500/10 text-green-400 border border-green-500/20';
+        case 2: // IN_PROGRESS
+          return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+        case 4: // CANCELED
+          return 'bg-red-500/10 text-red-400 border border-red-500/20';
+        default: // PENDING (1) u otro
+          return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
+      }
+    }
+    
+    // Fallback para strings (compatibilidad)
+    switch (statusValue) {
       case 'completed':
       case 'completado':
+      case 'delivered':
+      case 'entregado':
         return 'bg-green-500/10 text-green-400 border border-green-500/20';
       case 'shipped':
       case 'enviado':
+      case 'in_progress':
         return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
       default:
         return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
@@ -211,7 +268,7 @@ const Profile = () => {
                                 <p className="font-bold text-text-primary">{order.date}</p>
                               </div>
                               <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(order.status)}`}>
-                                {getStatusIcon(order.status)} {order.status}
+                                {getStatusIcon(order.status)} {getStatusText(order.status)}
                               </div>
                             </div>
                             {order.details && order.details.length > 0 && (

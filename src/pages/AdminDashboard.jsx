@@ -133,7 +133,16 @@ const AdminDashboard = () => {
           showAlert('success', 'Eliminado', 'El producto ha sido eliminado correctamente.');
         } catch (e) {
           setConfirmModal({ ...confirmModal, isOpen: false });
-          showAlert('error', 'Error', 'No se pudo eliminar el producto. Puede tener ventas asociadas.');
+          // Mensaje más específico basado en el código de error
+          let errorMessage = 'No se pudo eliminar el producto.';
+          if (e.response?.status === 409) {
+            errorMessage = 'No se puede eliminar: el producto tiene ventas asociadas. Considera marcarlo como inactivo.';
+          } else if (e.response?.data?.detail) {
+            errorMessage = typeof e.response.data.detail === 'string' 
+              ? e.response.data.detail 
+              : errorMessage;
+          }
+          showAlert('error', 'Error', errorMessage);
         } finally {
           setConfirmLoading(false);
         }
@@ -154,7 +163,18 @@ const AdminDashboard = () => {
       } 
       setIsProductModalOpen(false);
     } catch (e) {
-      throw e;
+      // Mostrar error específico en el modal de alerta
+      let errorMessage = 'Error al guardar el producto.';
+      if (e.response?.data?.detail) {
+        const detail = e.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          errorMessage = detail.map(err => `${err.loc?.join('.')}: ${err.msg}`).join('. ');
+        }
+      }
+      showAlert('error', 'Error', errorMessage);
+      throw e; // Re-lanzar para que ProductForm maneje el estado
     }
   };
   
@@ -175,7 +195,15 @@ const AdminDashboard = () => {
           showAlert('success', 'Eliminada', 'La categoría ha sido eliminada correctamente.');
         } catch (e) {
           setConfirmModal({ ...confirmModal, isOpen: false });
-          showAlert('error', 'Error', 'No se pudo eliminar la categoría. Puede tener productos asociados.');
+          let errorMessage = 'No se pudo eliminar la categoría.';
+          if (e.response?.status === 409) {
+            errorMessage = 'No se puede eliminar: la categoría tiene productos asociados.';
+          } else if (e.response?.data?.detail) {
+            errorMessage = typeof e.response.data.detail === 'string' 
+              ? e.response.data.detail 
+              : errorMessage;
+          }
+          showAlert('error', 'Error', errorMessage);
         } finally {
           setConfirmLoading(false);
         }

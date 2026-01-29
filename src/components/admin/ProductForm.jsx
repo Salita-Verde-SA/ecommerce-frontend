@@ -39,16 +39,29 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
         category_id: parseInt(formData.category_id)
       };
 
-      // Validaciones
-      if (!payload.name) throw new Error('El nombre es requerido');
-      if (payload.price <= 0 || isNaN(payload.price)) throw new Error('El precio debe ser mayor a 0');
-      if (payload.stock < 0 || isNaN(payload.stock)) throw new Error('El stock no puede ser negativo');
-      if (!payload.category_id || isNaN(payload.category_id)) throw new Error('Debe seleccionar una categoría');
+      // Validaciones locales con mensajes claros
+      if (!payload.name) throw new Error('El nombre del producto es requerido.');
+      if (payload.price <= 0 || isNaN(payload.price)) throw new Error('El precio debe ser un número mayor a 0.');
+      if (payload.stock < 0 || isNaN(payload.stock)) throw new Error('El stock no puede ser un número negativo.');
+      if (!payload.category_id || isNaN(payload.category_id)) throw new Error('Debe seleccionar una categoría válida.');
 
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      setError(err.message || 'Error al guardar el producto');
+      // Manejar errores del servidor vs errores locales
+      let errorMessage = err.message || 'Error al guardar el producto.';
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (Array.isArray(detail)) {
+          // Formatear errores de validación de Pydantic
+          errorMessage = detail.map(e => e.msg).join(' | ');
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
