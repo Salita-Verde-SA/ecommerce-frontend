@@ -5,33 +5,31 @@ import { Mail, Loader, Phone, AlertCircle, User, Cpu, CheckCircle, XCircle } fro
 import { useAuthStore } from '../store/useAuthStore';
 import { clientService } from '../services/clientService';
 
-// Validación de teléfono para Argentina (sin código de país)
-// Formatos válidos para Mendoza:
-// - 2615551234 (móvil: 261 + 7 dígitos)
-// - 2614551234 (fijo: 261 + 7 dígitos)
-// Solo números, sin espacios ni guiones
-const PHONE_REGEX = /^[1-9]\d{6,14}$/;
+// Validación de teléfono según backend: ^\+?[1-9]\d{6,19}$
+// - min_length: 7, max_length: 20
+// - Debe empezar con dígito 1-9 (NO con 0)
+// - Solo números
+const PHONE_REGEX = /^[1-9]\d{6,19}$/;
 
 const validatePhone = (phone) => {
   if (!phone) return { isValid: true, message: '' }; // Teléfono es opcional
+  
+  // Verificar que solo contenga números
+  if (!/^\d+$/.test(phone)) {
+    return { isValid: false, message: 'Use solo números, sin espacios ni guiones' };
+  }
+  
+  // No puede empezar con 0
+  if (phone.startsWith('0')) {
+    return { isValid: false, message: 'El número no debe empezar con 0' };
+  }
   
   if (phone.length < 7) {
     return { isValid: false, message: 'El número debe tener al menos 7 dígitos' };
   }
   
-  if (phone.length > 15) {
-    return { isValid: false, message: 'El número no puede tener más de 15 dígitos' };
-  }
-  
-  if (!PHONE_REGEX.test(phone)) {
-    return { isValid: false, message: 'Use solo números, sin espacios ni guiones' };
-  }
-  
-  // Validación específica para Mendoza (código 261)
-  if (phone.startsWith('261')) {
-    if (phone.length !== 10) {
-      return { isValid: false, message: 'Número de Mendoza debe tener 10 dígitos (261 + 7 dígitos)' };
-    }
+  if (phone.length > 20) {
+    return { isValid: false, message: 'El número no puede tener más de 20 dígitos' };
   }
   
   return { isValid: true, message: '' };
@@ -42,17 +40,20 @@ const getPhoneSuggestions = (phone) => {
   
   const suggestions = [];
   
+  // Advertencia si empieza con 0
+  if (phone.startsWith('0')) {
+    suggestions.push({ text: 'No incluya el 0 inicial', type: 'warning' });
+    return suggestions;
+  }
+  
   // Sugerencias basadas en lo que está escribiendo
   if (phone.startsWith('261')) {
-    suggestions.push({ text: '✓ Código de área de Mendoza detectado', type: 'success' });
-    if (phone.length < 10) {
-      suggestions.push({ text: `Faltan ${10 - phone.length} dígitos`, type: 'info' });
-    } else if (phone.length === 10) {
-      suggestions.push({ text: '✓ Número completo', type: 'success' });
-    }
-  } else if (phone.length >= 1 && phone.length < 7) {
-    suggestions.push({ text: `Ingrese al menos ${7 - phone.length} dígitos más`, type: 'info' });
-  } else if (phone.length >= 7) {
+    suggestions.push({ text: '✓ Código de área de Mendoza', type: 'success' });
+  }
+  
+  if (phone.length < 7) {
+    suggestions.push({ text: `Mínimo 7 dígitos (faltan ${7 - phone.length})`, type: 'info' });
+  } else if (phone.length >= 7 && phone.length <= 20) {
     suggestions.push({ text: '✓ Longitud válida', type: 'success' });
   }
   
@@ -276,7 +277,7 @@ const Login = () => {
                       key={index} 
                       className={`text-xs flex items-center gap-1 ${
                         suggestion.type === 'success' ? 'text-green-400' :
-                        suggestion.type === 'tip' ? 'text-yellow-400' :
+                        suggestion.type === 'warning' ? 'text-yellow-400' :
                         'text-text-secondary'
                       }`}
                     >
