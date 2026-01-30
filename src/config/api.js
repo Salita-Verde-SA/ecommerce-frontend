@@ -23,12 +23,12 @@ const NORMALIZED_API_URL = (() => {
 })();
 
 // Logs de depuración para verificar qué valor llega desde Vercel/Vite
-/* eslint-disable no-console */
-console.info('[config/api] API_URL raw:', API_URL);
-console.info('[config/api] API_URL normalized:', NORMALIZED_API_URL);
-console.info('[config/api] import.meta.env.VITE_API_URL:', import.meta?.env?.VITE_API_URL);
+// /* eslint-disable no-console */
+// console.info('[config/api] API_URL raw:', API_URL);
+// console.info('[config/api] API_URL normalized:', NORMALIZED_API_URL);
+// console.info('[config/api] import.meta.env.VITE_API_URL:', import.meta?.env?.VITE_API_URL);
 // console.info('[config/api] global.importMetaEnv.VITE_API_URL:', global?.importMetaEnv?.VITE_API_URL);
-/* eslint-enable no-console */
+// /* eslint-enable no-console */
 
 const api = axios.create({
   baseURL: NORMALIZED_API_URL,
@@ -40,43 +40,43 @@ const api = axios.create({
 });
 
 // Interceptor de petición para depuración: mostrar la URL final que se enviará
-api.interceptors.request.use((config) => {
-  try {
-    const base = config.baseURL || '';
-    const url = config.url || '';
-    // Intentamos construir la URL absoluta para inspección
-    const final = new URL(url, base).href;
-    console.info('[config/api] axios request ->', { base, url, final });
-  } catch (e) {
-    console.warn('[config/api] axios request - no se pudo construir URL:', e);
-  }
-  return config;
-});
+// api.interceptors.request.use((config) => {
+//   try {
+//     const base = config.baseURL || '';
+//     const url = config.url || '';
+//     // Intentamos construir la URL absoluta para inspección
+//     const final = new URL(url, base).href;
+//     console.info('[config/api] axios request ->', { base, url, final });
+//   } catch (e) {
+//     console.warn('[config/api] axios request - no se pudo construir URL:', e);
+//   }
+//   return config;
+// });
 
 // Interceptor para manejar respuestas y errores
-api.interceptors.response.use(
-  (response) => {
-    console.info('[config/api] axios response OK:', {
-      status: response.status,
-      url: response.config.url,
-      dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
-    });
-    return response;
-  },
-  (error) => {
-    // Log detallado de errores para debugging
-    console.error('[config/api] axios ERROR:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-      // Detectar si es error de red/CORS
-      isNetworkError: !error.response && error.request,
-      isCorsError: error.message?.includes('Network Error') || error.message?.includes('CORS')
-    });
-    return Promise.reject(error);
-  }
-);
+// api.interceptors.response.use(
+//   (response) => {
+//     console.info('[config/api] axios response OK:', {
+//       status: response.status,
+//       url: response.config.url,
+//       dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+//     });
+//     return response;
+//   },
+//   (error) => {
+//     // Log detallado de errores para debugging
+//     console.error('[config/api] axios ERROR:', {
+//       message: error.message,
+//       status: error.response?.status,
+//       data: error.response?.data,
+//       url: error.config?.url,
+//       baseURL: error.config?.baseURL,
+//       // Detectar si es error de red/CORS
+//       isNetworkError: !error.response && error.request,
+//       isCorsError: error.message?.includes('Network Error') || error.message?.includes('CORS')
+//     });
+//     return Promise.reject(error);
+//   }
+// );
 
 export default api;
