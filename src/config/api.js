@@ -13,15 +13,25 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-// Log para depuración (solo en desarrollo)
-if (process.env.NODE_ENV === 'development') {
-  console.log('API_URL resuelta:', API_URL);
-  console.log('VITE_API_URL desde import.meta.env:', import.meta.env?.VITE_API_URL);
-  console.log('VITE_API_URL desde global.importMetaEnv:', global?.importMetaEnv?.VITE_API_URL);
-}
+// Normalizar la URL: si la variable viene sin protocolo, añadimos https://
+const NORMALIZED_API_URL = (() => {
+  let url = API_URL;
+  if (typeof url === 'string' && url.length > 0 && !/^https?:\/\//i.test(url)) {
+    url = `https://${url}`;
+  }
+  return url;
+})();
+
+// Logs de depuración para verificar qué valor llega desde Vercel/Vite
+/* eslint-disable no-console */
+console.info('[config/api] API_URL raw:', API_URL);
+console.info('[config/api] API_URL normalized:', NORMALIZED_API_URL);
+console.info('[config/api] import.meta.env.VITE_API_URL:', import.meta?.env?.VITE_API_URL);
+console.info('[config/api] global.importMetaEnv.VITE_API_URL:', global?.importMetaEnv?.VITE_API_URL);
+/* eslint-enable no-console */
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: NORMALIZED_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
