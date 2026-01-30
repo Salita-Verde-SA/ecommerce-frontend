@@ -347,15 +347,16 @@ const AdminDashboard = () => {
             </div>
             
             <div className="bg-surface rounded-2xl shadow-lg overflow-hidden border border-ui-border">
-              <table className="w-full text-left">
+              <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[600px]">
                 <thead className="bg-background/50 border-b border-ui-border">
                   <tr>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Producto</th>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Precio</th>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Stock</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Producto</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Precio</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Stock</th>
                     {/* CORRECCIÓN: Columna de Categoría agregada */}
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Categoría</th>
-                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase">Acciones</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Categoría</th>
+                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ui-border">
@@ -379,6 +380,7 @@ const AdminDashboard = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </motion.div>
         )}
@@ -407,14 +409,15 @@ const AdminDashboard = () => {
         {activeTab === 'orders' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="bg-surface rounded-2xl shadow-lg overflow-hidden border border-ui-border">
-              <table className="w-full text-left">
+              <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[500px]">
                 <thead className="bg-background/50 border-b border-ui-border">
                   <tr>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">ID</th>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Fecha</th>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Total</th>
-                    <th className="p-4 text-text-secondary font-bold text-sm uppercase">Estado</th>
-                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase">Detalle</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">ID</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Fecha</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Total</th>
+                    <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Estado</th>
+                    <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Detalle</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ui-border">
@@ -434,6 +437,7 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </motion.div>
         )}
