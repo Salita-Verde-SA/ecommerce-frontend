@@ -112,7 +112,7 @@ const AdminDashboard = () => {
     }
   }, [currentHealth]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = () => { logout(); window.location.href = '/'; };
   const handleGoHome = () => { navigate('/'); };
 
   // ===== PRODUCTOS =====

@@ -18,6 +18,20 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const handleCartClick = (e) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      navigate('/cart');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/';
+  };
+
   // CORRECCIÓN: Mapeo explícito de Etiquetas vs IDs para evitar errores con tildes (Categorías -> categorias)
   const navLinks = [
     { name: 'Inicio', id: 'inicio' },
@@ -117,14 +131,14 @@ const Header = () => {
                 </button>
               </div>
               
-              <Link to="/cart" className="relative text-text-secondary hover:text-primary transition-colors p-2 hover:bg-primary/10 rounded-full">
+              <button onClick={handleCartClick} className="relative text-text-secondary hover:text-primary transition-colors p-2 hover:bg-primary/10 rounded-full">
                 <ShoppingCart size={20} />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-primary text-text-inverse text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-sm shadow-primary/50">
                     {cartCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
               {isAuthenticated ? (
                 <div className="flex items-center gap-4">
@@ -149,14 +163,14 @@ const Header = () => {
 
             {/* MOBILE TOGGLE */}
             <div className="md:hidden flex items-center gap-4">
-              <Link to="/cart" className="relative text-text-secondary hover:text-primary transition-colors">
+              <button onClick={handleCartClick} className="relative text-text-secondary hover:text-primary transition-colors">
                 <ShoppingCart size={24} />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-primary text-text-inverse text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
-              </Link>
+              </button>
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-text-primary hover:text-primary p-1">
                 {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
@@ -217,7 +231,7 @@ const Header = () => {
                     </div>
                     <span className="font-medium">Mi Perfil</span>
                   </Link>
-                  <button onClick={() => { logout(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors font-medium">
+                  <button onClick={() => { setIsMenuOpen(false); handleLogout(); }} className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors font-medium">
                     Cerrar Sesión
                   </button>
                 </div>

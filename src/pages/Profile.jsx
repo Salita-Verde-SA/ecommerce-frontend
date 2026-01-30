@@ -88,7 +88,7 @@ const Profile = () => {
 
   const handleLogout = () => { 
     logout(); 
-    navigate('/'); 
+    window.location.href = '/'; 
   };
 
   // --- LÓGICA DE ACTUALIZACIÓN DE PERFIL ---
