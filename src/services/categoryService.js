@@ -1,26 +1,26 @@
 import api from '../config/api';
 
-// Helper para normalizar categorías del backend (mantener id_key y agregar id como alias)
+// Función auxiliar para normalizar categorías del backend (id_key e id como alias)
 const normalizeCategory = (category) => ({
-  id: category.id_key,      // Alias para compatibilidad frontend
+  id: category.id_key,      // Alias para compatibilidad con componentes del frontend
   id_key: category.id_key,
   name: category.name
 });
 
 export const categoryService = {
-  // READ - Obtener todas las categorías
+  // Obtención de todas las categorías registradas
   getAll: async () => {
     const response = await api.get('/categories/');
     return response.data.map(normalizeCategory);
   },
 
-  // READ - Obtener por ID
+  // Obtención de categoría por identificador
   getById: async (id) => {
     const response = await api.get(`/categories/${id}`);
     return normalizeCategory(response.data);
   },
 
-  // CREATE (Admin)
+  // Creación de categoría (requiere permisos de administrador)
   create: async (categoryData) => {
     const payload = {
       name: categoryData.name
@@ -29,9 +29,9 @@ export const categoryService = {
     return normalizeCategory(response.data);
   },
 
-  // UPDATE (Admin)
+  // Actualización de categoría (requiere permisos de administrador)
   update: async (id, categoryData) => {
-    // El backend espera id_key en el body para PUT
+    // El backend requiere id_key en el body para operaciones PUT
     const payload = {
       id_key: parseInt(id),
       name: categoryData.name
@@ -40,7 +40,7 @@ export const categoryService = {
     return normalizeCategory(response.data);
   },
 
-  // DELETE (Admin)
+  // Eliminación de categoría (requiere permisos de administrador)
   delete: async (id) => {
     await api.delete(`/categories/${id}`);
     return true;

@@ -1,6 +1,6 @@
 import api from '../config/api';
 
-// Helper para normalizar reseñas
+// Función auxiliar para normalizar estructura de reseñas
 const normalizeReview = (review) => ({
   id: review.id_key,
   id_key: review.id_key,
@@ -13,13 +13,13 @@ const normalizeReview = (review) => ({
 });
 
 export const reviewService = {
-  // Obtener todas las reseñas
+  // Obtención de todas las reseñas registradas
   getAll: async () => {
     const response = await api.get('/reviews/');
     return response.data.map(normalizeReview);
   },
 
-  // Obtener reseñas de un producto específico
+  // Obtención de reseñas asociadas a un producto específico
   getByProduct: async (productId) => {
     // El backend no tiene un endpoint específico por producto,
     // así que filtramos del lado del cliente o usamos el endpoint general

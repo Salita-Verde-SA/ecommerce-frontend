@@ -1,28 +1,28 @@
 import api from '../config/api';
 
-// Helper para normalizar productos del backend
+// Función auxiliar para normalizar la estructura de productos recibidos del backend
 const normalizeProduct = (product, calculatedRating = null) => ({
-  id: product.id_key,           // Alias para compatibilidad frontend
+  id: product.id_key,           // Alias para compatibilidad con componentes del frontend
   id_key: product.id_key,
   name: product.name,
-  description: product.description || '', // Mantenemos fallback vacío para evitar errores en vistas
+  description: product.description || '', // Valor por defecto para evitar errores en vistas
   price: parseFloat(product.price),
   stock: product.stock,
   category_id: product.category_id,
   
-  // CORRECCIÓN: El backend envía 'category_name' como campo directo (ProductSchema).
-  // Antes buscaba product.category.name y por eso fallaba.
+  // El backend envía 'category_name' como campo directo en ProductSchema
+  // Se incluye fallback para retrocompatibilidad con estructuras anidadas
   category_name: product.category_name || product.category?.name || 'Sin categoría',
   
-  // Prioridad: Rating calculado > Rating del backend > 0 (si no hay reviews)
+  // Prioridad de rating: calculado > backend > valor por defecto (0)
   rating: calculatedRating !== null ? calculatedRating : (product.rating || 0)
 });
 
 export const productService = {
-  // OBTENER TODOS
+  // Obtención de todos los productos con cálculo de rating promedio
   getAll: async () => {
     try {
-      // Obtenemos productos y reseñas en paralelo para eficiencia
+      // Obtención paralela de productos y reseñas para optimizar rendimiento
       const [productsRes, reviewsRes] = await Promise.all([
         api.get('/products/'),
         api.get('/reviews/')
@@ -31,7 +31,7 @@ export const productService = {
       const products = productsRes.data;
       const reviews = reviewsRes.data;
 
-      // Mapeamos cada producto calculando su rating real basado en sus reseñas
+      // Cálculo del rating promedio para cada producto basado en sus reseñas
       return products.map(product => {
         const productReviews = reviews.filter(r => r.product_id === product.id_key);
         
@@ -45,13 +45,13 @@ export const productService = {
       });
     } catch (error) {
       console.error("Error fetching products with ratings:", error);
-      // Fallback en caso de error: devolver productos sin cálculo de rating
+      // En caso de error, se retornan productos sin cálculo de rating
       const response = await api.get('/products/');
       return response.data.map(p => normalizeProduct(p));
     }
   },
 
-  // OBTENER POR ID
+  // Obtención de un producto específico por identificador
   getById: async (id) => {
     try {
       const [productRes, reviewsRes] = await Promise.all([
@@ -62,7 +62,7 @@ export const productService = {
       const product = productRes.data;
       const reviews = reviewsRes.data;
 
-      // Filtrar reseñas para este producto específico
+      // Filtrado de reseñas correspondientes al producto consultado
       const productReviews = reviews.filter(r => r.product_id === product.id_key);
       
       let avgRating = 0;
@@ -78,25 +78,25 @@ export const productService = {
     }
   },
 
-  // CREAR PRODUCTO (POST) - Solo Admin
+  // Creación de producto (requiere permisos de administrador)
   create: async (productData) => {
     const payload = {
       name: productData.name,
-      // description eliminada
+      // Campo description omitido según especificación actual
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
     };
     const response = await api.post('/products/', payload);
-    return normalizeProduct(response.data, 0); // Producto nuevo nace con 0 estrellas
+    return normalizeProduct(response.data, 0); // Producto nuevo se inicializa con rating 0
   },
 
-  // ACTUALIZAR PRODUCTO (PUT) - Solo Admin
+  // Actualización de producto (requiere permisos de administrador)
   update: async (id, productData) => {
-    // Recordatorio: NO enviamos id_key en el body para evitar conflictos con el backend
+    // El campo id_key no se incluye en el body para evitar conflictos con el backend
     const payload = {
       name: productData.name,
-      // description eliminada
+      // Campo description omitido según especificación actual
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock),
       category_id: parseInt(productData.category_id)
@@ -106,7 +106,7 @@ export const productService = {
     return normalizeProduct(response.data);
   },
 
-  // ELIMINAR PRODUCTO (DELETE) - Solo Admin
+  // Eliminación de producto (requiere permisos de administrador)
   delete: async (id) => {
     await api.delete(`/products/${id}`);
     return true;

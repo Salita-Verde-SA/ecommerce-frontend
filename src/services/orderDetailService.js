@@ -1,16 +1,16 @@
 import api from '../config/api';
 
 export const orderDetailService = {
-  // Obtener todos los detalles
+  // Obtención de todos los detalles de órdenes
   getAll: async () => {
     const response = await api.get('/order_details/');
     return response.data;
   },
 
-  // Obtener detalles por ID de orden
+  // Obtención de detalles correspondientes a una orden específica
   getByOrderId: async (orderId) => {
     const response = await api.get('/order_details/');
-    // Filtrar en frontend por order_id
+    // Filtrado por order_id realizado en el frontend
     return response.data
       .filter(detail => detail.order_id === parseInt(orderId))
       .map(detail => ({
@@ -24,7 +24,7 @@ export const orderDetailService = {
       }));
   },
 
-  // Crear detalle de orden
+  // Creación de un nuevo detalle de orden
   create: async (detailData) => {
     const payload = {
       quantity: parseInt(detailData.quantity),
@@ -36,7 +36,7 @@ export const orderDetailService = {
     return response.data;
   },
 
-  // Eliminar detalle
+  // Eliminación de un detalle de orden por identificador
   delete: async (id) => {
     await api.delete(`/order_details/${id}`);
     return true;

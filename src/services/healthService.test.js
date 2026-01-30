@@ -1,5 +1,5 @@
-// javascript
-// File: frontend/src/services/healthService.test.js
+// Archivo de pruebas unitarias para healthService
+// Ubicación: frontend/src/services/healthService.test.js
 
 describe('healthService', () => {
   test('healthService module exports check function', async () => {
@@ -16,15 +16,15 @@ describe('healthService.check behavior', () => {
   let mockGet;
 
   beforeEach(async () => {
-    // Importar módulos frescos
+    // Importación de módulos con estado limpio
     const apiModule = await import('../config/api.js');
     api = apiModule.default;
     
-    // Guardar referencia original y crear mock
+    // Almacenamiento de referencia original y creación del mock
     mockGet = jest.fn();
     api.get = mockGet;
     
-    // Importar healthService
+    // Importación del servicio healthService
     const hsModule = await import('./healthService.js');
     healthService = hsModule.healthService;
   });

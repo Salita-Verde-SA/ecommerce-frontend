@@ -1,21 +1,21 @@
 import api from '../config/api';
 
-// POR AHORA EN DESUSO, EN SU LUGAR UTILIZAR useAuthStore
+// Servicio de autenticación - Actualmente en desuso, utilizar useAuthStore como alternativa
 
 export const authService = {
   login: async (email) => {
-    // El backend verifica solo la existencia del email
+    // Verificación de existencia del email en el backend
     const formData = new URLSearchParams();
     formData.append('username', email);
-    formData.append('password', ''); // Campo requerido por OAuth2, pero vacío
+    formData.append('password', ''); // Campo requerido por OAuth2, valor vacío
 
-    const response = await api.post('/token/', formData, {  // Trailing slash añadido
+    const response = await api.post('/token/', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
 
-    // El backend retorna: { access_token, token_type, user: {...} }
+    // Estructura de respuesta del backend: { access_token, token_type, user: {...} }
     const { access_token, user } = response.data;
     
     return {
@@ -25,15 +25,15 @@ export const authService = {
         name: user.name,
         lastname: user.lastname,
         email: user.email,
-        // TODO: Eliminar el role porque no está en el backend
-        role: user.role // 'admin' o 'client'
+        // Nota: El campo role no está implementado en el backend actual
+        role: user.role
       }
     };
   },
 
   register: async (userData) => {
-    // POST /clients para crear nuevo cliente sin contraseña
-    const response = await api.post('/clients/', {  // Trailing slash añadido
+    // Creación de nuevo cliente mediante POST /clients
+    const response = await api.post('/clients/', {
       name: userData.name,
       lastname: userData.lastname,
       email: userData.email,
@@ -42,9 +42,9 @@ export const authService = {
     return response.data;
   },
 
-  // Obtener perfil del usuario autenticado usando el endpoint de clientes
+  // Obtención del perfil del usuario autenticado mediante endpoint de clientes
   getProfile: async (userId) => {
-    const response = await api.get(`/clients/${userId}/`);  // Trailing slash añadido
+    const response = await api.get(`/clients/${userId}/`);
     return response.data;
   }
 };

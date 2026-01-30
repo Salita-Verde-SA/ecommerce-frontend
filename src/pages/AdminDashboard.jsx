@@ -28,7 +28,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Hook de monitoreo de latencia
+  // Hook para monitoreo de latencia del servidor
   const { 
     latencyData, 
     currentHealth, 
@@ -40,22 +40,22 @@ const AdminDashboard = () => {
     clearData: clearLatencyData
   } = useLatencyMonitor(2000, 30);
 
-  // Modales de producto
+  // Estado de modales de producto
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
-  // Modales de categoría
+  // Estado de modales de categoría
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   
-  // Modal de confirmación
+  // Estado del modal de confirmación
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {}, type: 'danger' });
   const [confirmLoading, setConfirmLoading] = useState(false);
   
-  // Modal de alerta
+  // Estado del modal de alerta
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
-  // Modal de orden
+  // Estado del modal de detalle de orden
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -112,11 +112,11 @@ const AdminDashboard = () => {
     }
   }, [currentHealth]);
 
-  // Primero redirigimos para evitar que AdminRoute redirija a /login antes de completar la navegación
+  // Se realiza la redirección antes del logout para evitar interferencias con AdminRoute
   const handleLogout = () => { window.location.href = '/'; logout(); };
   const handleGoHome = () => { navigate('/'); };
 
-  // ===== PRODUCTOS =====
+  // ===== GESTIÓN DE PRODUCTOS =====
   const handleCreateProduct = () => { setEditingProduct(null); setIsProductModalOpen(true); };
   const handleEditProduct = (p) => { setEditingProduct(p); setIsProductModalOpen(true); };
   
@@ -133,7 +133,7 @@ const AdminDashboard = () => {
           showAlert('success', 'Eliminado', 'El producto ha sido eliminado correctamente.');
         } catch (e) {
           setConfirmModal({ ...confirmModal, isOpen: false });
-          // Mensaje más específico basado en el código de error
+          // Mensaje de error específico según el código de respuesta
           let errorMessage = 'No se pudo eliminar el producto.';
           if (e.response?.status === 409) {
             errorMessage = 'No se puede eliminar: el producto tiene ventas asociadas. Considera marcarlo como inactivo.';
@@ -163,7 +163,7 @@ const AdminDashboard = () => {
       } 
       setIsProductModalOpen(false);
     } catch (e) {
-      // Mostrar error específico en el modal de alerta
+      // Generación del mensaje de error específico para el modal de alerta
       let errorMessage = 'Error al guardar el producto.';
       if (e.response?.data?.detail) {
         const detail = e.response.data.detail;
@@ -174,11 +174,11 @@ const AdminDashboard = () => {
         }
       }
       showAlert('error', 'Error', errorMessage);
-      throw e; // Re-lanzar para que ProductForm maneje el estado
+      throw e; // Se relanza la excepción para permitir el manejo del estado en ProductForm
     }
   };
   
-  // ===== CATEGORÍAS =====
+  // ===== GESTIÓN DE CATEGORÍAS =====
   const handleCreateCategory = () => { setEditingCategory(null); setIsCategoryModalOpen(true); };
   const handleEditCategory = (cat) => { setEditingCategory(cat); setIsCategoryModalOpen(true); };
   
@@ -250,7 +250,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filtrado que incluye búsqueda por nombre y categoría
+  // Filtrado de productos por nombre y categoría
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p.category_name && p.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -289,7 +289,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background pt-8 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
+        {/* Encabezado del panel */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 bg-surface p-6 rounded-2xl shadow-lg border border-ui-border">
           <div className="flex items-center gap-4">
             <div className="p-2 bg-primary/20 rounded-lg">
@@ -355,7 +355,7 @@ const AdminDashboard = () => {
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Producto</th>
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Precio</th>
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Stock</th>
-                    {/* CORRECCIÓN: Columna de Categoría agregada */}
+                    {/* Columna de categoría del producto */}
                     <th className="p-4 text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Categoría</th>
                     <th className="p-4 text-right text-text-secondary font-bold text-sm uppercase whitespace-nowrap">Acciones</th>
                   </tr>
@@ -366,7 +366,7 @@ const AdminDashboard = () => {
                       <td className="p-4 font-medium text-text-primary">{p.name}</td>
                       <td className="p-4 font-bold text-primary">${p.price}</td>
                       <td className="p-4 text-text-secondary">{p.stock} un.</td>
-                      {/* CORRECCIÓN: Celda de Categoría agregada */}
+                      {/* Celda de categoría del producto */}
                       <td className="p-4 text-text-secondary">
                         <div className="flex items-center gap-2">
                            <Layers size={14} className="text-text-muted"/>
@@ -386,7 +386,7 @@ const AdminDashboard = () => {
           </motion.div>
         )}
 
-        {/* ... (Resto del componente sin cambios: Tabs de categorías y órdenes, modales, etc.) ... */}
+        {/* Sección de categorías y órdenes */}
         {activeTab === 'categories' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between mb-6">

@@ -1,6 +1,6 @@
 import api from '../config/api';
 
-// Helper para generar número de factura único
+// Función auxiliar para generar número de factura único
 const generateBillNumber = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -13,7 +13,7 @@ const generateBillNumber = () => {
   return `BILL-${year}${month}${day}-${hours}${mins}${secs}-${random}`;
 };
 
-// Helper para formatear fecha a ISO 8601 (YYYY-MM-DD)
+// Función auxiliar para formatear fecha a formato ISO 8601 (YYYY-MM-DD)
 const formatDate = (date = new Date()) => {
   const d = new Date(date);
   const year = d.getFullYear();
@@ -22,20 +22,20 @@ const formatDate = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
-// Mapeo de payment_type string a integer según el backend
+// Mapeo de tipo de pago (string a entero) según especificación del backend
 const PAYMENT_TYPE_MAP = {
   'cash': 1,
   'card': 2
 };
 
 export const billService = {
-  // Obtener todas las facturas
+  // Obtención de todas las facturas registradas
   getAll: async () => {
     const response = await api.get('/bills/');
     return response.data;
   },
 
-  // Obtener facturas del cliente
+  // Obtención de facturas asociadas a un cliente específico
   getMyBills: async (clientId) => {
     const response = await api.get('/bills/');
     return response.data.map(bill => ({
@@ -48,15 +48,15 @@ export const billService = {
     }));
   },
 
-  // Obtener factura por ID
+  // Obtención de factura por identificador
   getById: async (id) => {
     const response = await api.get(`/bills/${id}`);
     return response.data;
   },
 
-  // Crear factura - CORREGIDO según schema real del backend
+  // Creación de factura según esquema definido por el backend
   create: async (billData) => {
-    // Convertir payment_type de string a integer si es necesario
+    // Conversión del tipo de pago de cadena a entero si corresponde
     let paymentTypeValue = billData.payment_type;
     if (typeof paymentTypeValue === 'string') {
       paymentTypeValue = PAYMENT_TYPE_MAP[paymentTypeValue.toLowerCase()] || 1;
@@ -67,8 +67,8 @@ export const billService = {
       date: formatDate(billData.date),
       total: parseFloat(billData.total || 0),
       discount: parseFloat(billData.discount || 0),
-      payment_type: paymentTypeValue,        // INTEGER, no string
-      client_id: parseInt(billData.client_id) // REQUERIDO
+      payment_type: paymentTypeValue,        // Valor entero requerido por el backend
+      client_id: parseInt(billData.client_id) // Identificador del cliente (obligatorio)
     };
     
     console.log('Creando factura con payload:', payload);
@@ -77,13 +77,13 @@ export const billService = {
     return response.data;
   },
 
-  // Actualizar factura
+  // Actualización de datos de una factura existente
   update: async (id, billData) => {
     const response = await api.put(`/bills/${id}`, billData);
     return response.data;
   },
 
-  // Eliminar factura
+  // Eliminación de una factura por identificador
   delete: async (id) => {
     await api.delete(`/bills/${id}`);
     return true;
