@@ -53,18 +53,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para manejar errores de respuesta
+// Interceptor para manejar respuestas y errores
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.info('[config/api] axios response OK:', {
+      status: response.status,
+      url: response.config.url,
+      dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+    });
+    return response;
+  },
   (error) => {
-    // Log de errores para debugging
-    if (error.response) {
-      console.error('API Error:', {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config.url
-      });
-    }
+    // Log detallado de errores para debugging
+    console.error('[config/api] axios ERROR:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      // Detectar si es error de red/CORS
+      isNetworkError: !error.response && error.request,
+      isCorsError: error.message?.includes('Network Error') || error.message?.includes('CORS')
+    });
     return Promise.reject(error);
   }
 );
