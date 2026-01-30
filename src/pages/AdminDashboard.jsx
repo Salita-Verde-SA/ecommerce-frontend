@@ -112,7 +112,8 @@ const AdminDashboard = () => {
     }
   }, [currentHealth]);
 
-  const handleLogout = () => { logout(); window.location.href = '/'; };
+  // Primero redirigimos para evitar que AdminRoute redirija a /login antes de completar la navegación
+  const handleLogout = () => { window.location.href = '/'; logout(); };
   const handleGoHome = () => { navigate('/'); };
 
   // ===== PRODUCTOS =====

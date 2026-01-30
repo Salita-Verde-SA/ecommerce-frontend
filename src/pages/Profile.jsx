@@ -87,8 +87,9 @@ const Profile = () => {
   }, [user]);
 
   const handleLogout = () => { 
+    // Primero redirigimos, luego hacemos logout para evitar que PrivateRoute redirija a /login
+    window.location.href = '/';
     logout(); 
-    window.location.href = '/'; 
   };
 
   // --- LÓGICA DE ACTUALIZACIÓN DE PERFIL ---
