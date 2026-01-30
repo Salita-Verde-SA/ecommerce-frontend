@@ -80,9 +80,9 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Para teléfono, permitir solo números
+    // Campo de teléfono: se permite solo entrada numérica
     if (name === 'telephone') {
-      // Solo números, sin espacios ni caracteres especiales
+      // Eliminación de caracteres no numéricos
       const sanitized = value.replace(/[^0-9]/g, '');
       setFormData({...formData, [name]: sanitized});
       setPhoneTouched(true);
@@ -101,7 +101,7 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        // LOGIN - Buscar cliente por email
+        // Proceso de inicio de sesión: búsqueda de cliente por email
         const client = await clientService.findByEmail(formData.email);
         
         if (!client) {
@@ -109,23 +109,23 @@ const Login = () => {
           return;
         }
         
-        // Guardar datos del cliente en el store
+        // Almacenamiento de datos del cliente en el store de autenticación
         setAuth(client);
         
-        // Redirigir según email (simulación de roles)
+        // Redirección basada en el email (simulación de sistema de roles)
         if (client.email?.includes('admin')) {
           navigate('/admin');
         } else {
           navigate('/');
         }
       } else {
-        // Validar teléfono antes de enviar
+        // Validación del número de teléfono antes del envío
         if (formData.telephone && !phoneValidation.isValid) {
           setError('Por favor corrija el número de teléfono antes de continuar');
           return;
         }
         
-        // REGISTRO - Crear nuevo cliente
+        // Proceso de registro: creación de nuevo cliente
         const newClient = await clientService.create({ 
           email: formData.email, 
           name: formData.name,
@@ -133,7 +133,7 @@ const Login = () => {
           telephone: formData.telephone || undefined
         });
         
-        // Registro exitoso - auto login
+        // Registro completado: inicio de sesión automático
         setSuccess('¡Registro exitoso! Redirigiendo...');
         setTimeout(() => {
           setAuth(newClient);
@@ -154,7 +154,7 @@ const Login = () => {
         }
       }
       
-      // Traducir mensajes comunes
+      // Traducción de mensajes de error comunes
       if (message.includes('already registered') || message.includes('already exists')) {
         message = 'Este email ya está registrado';
       }
@@ -170,7 +170,7 @@ const Login = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center bg-background py-12 px-4 relative overflow-hidden">
-      {/* Efecto de fondo sutil */}
+      {/* Efecto visual de fondo */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
 
       <motion.div 

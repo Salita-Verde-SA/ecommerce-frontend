@@ -52,7 +52,7 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Encabezado de la página */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">
@@ -72,7 +72,7 @@ const Cart = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Lista de productos */}
+          {/* Listado de productos del carrito */}
           <div className="lg:col-span-2 space-y-4">
             <AnimatePresence>
               {cart.map((item) => (
@@ -85,12 +85,12 @@ const Cart = () => {
                   className="bg-surface rounded-2xl border border-ui-border p-5 hover:border-primary/30 transition-colors"
                 >
                   <div className="flex gap-5">
-                    {/* Icono del producto */}
+                    {/* Representación visual del producto */}
                     <div className="w-24 h-24 bg-gradient-to-br from-background to-primary/5 rounded-xl flex items-center justify-center border border-ui-border shrink-0">
                       <Package size={36} className="text-primary" />
                     </div>
 
-                    {/* Info del producto */}
+                    {/* Información del producto */}
                     <div className="flex-grow min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -113,7 +113,7 @@ const Cart = () => {
                         </button>
                       </div>
 
-                      {/* Controles de cantidad y subtotal */}
+                      {/* Controles de cantidad y cálculo de subtotal */}
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-ui-border border-dashed">
                         <div className="flex items-center bg-background rounded-lg border border-ui-border">
                           <button
@@ -148,7 +148,7 @@ const Cart = () => {
             </AnimatePresence>
           </div>
 
-          {/* Resumen del pedido */}
+          {/* Panel de resumen del pedido */}
           <div className="lg:col-span-1">
             <div className="bg-surface rounded-2xl border border-ui-border p-6 sticky top-24 shadow-xl shadow-black/5">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20 rounded-t-2xl"></div>

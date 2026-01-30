@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Soportar tanto Vite (import.meta.env) como Jest (global.importMetaEnv)
+// Función para obtener la URL de la API compatible con Vite (import.meta.env) y Jest (global.importMetaEnv)
 const getApiUrl = () => {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     return import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -13,7 +13,7 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-// Normalizar la URL: si la variable viene sin protocolo, añadimos https://
+// Normalización de URL: se añade protocolo https:// si no está presente
 const NORMALIZED_API_URL = (() => {
   let url = API_URL;
   if (typeof url === 'string' && url.length > 0 && !/^https?:\/\//i.test(url)) {
@@ -22,41 +22,41 @@ const NORMALIZED_API_URL = (() => {
   return url;
 })();
 
-// Logs de depuración para verificar qué valor llega desde Vercel/Vite
-// /* eslint-disable no-console */
+// Registros de depuración para verificación de valores en entornos Vercel/Vite
+// Estos comentarios se mantienen desactivados por defecto
 // console.info('[config/api] API_URL raw:', API_URL);
 // console.info('[config/api] API_URL normalized:', NORMALIZED_API_URL);
 // console.info('[config/api] import.meta.env.VITE_API_URL:', import.meta?.env?.VITE_API_URL);
 // console.info('[config/api] global.importMetaEnv.VITE_API_URL:', global?.importMetaEnv?.VITE_API_URL);
-// /* eslint-enable no-console */
 
 const api = axios.create({
   baseURL: NORMALIZED_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Asegurar que las peticiones incluyan credenciales si es necesario
+  // Configuración de credenciales para peticiones cross-origin
   withCredentials: false,
 });
 
-// Interceptor de petición para depuración: mostrar la URL final que se enviará
+// Interceptor de petición para depuración (desactivado por defecto)
+// Permite visualizar la URL final antes del envío
 // api.interceptors.request.use((config) => {
 //   try {
 //     const base = config.baseURL || '';
 //     const url = config.url || '';
-//     // Intentamos construir la URL absoluta para inspección
 //     const final = new URL(url, base).href;
 //     console.info('[config/api] axios request ->', { base, url, final });
 //   } catch (e) {
-//     console.warn('[config/api] axios request - no se pudo construir URL:', e);
+//     console.warn('[config/api] Error al construir URL:', e);
 //   }
 //   return config;
 // });
 
-// Interceptor para manejar respuestas y errores
+// Interceptor de respuesta para depuración (desactivado por defecto)
+// Registra respuestas exitosas y errores con información detallada
 // api.interceptors.response.use(
 //   (response) => {
-//     console.info('[config/api] axios response OK:', {
+//     console.info('[config/api] Respuesta exitosa:', {
 //       status: response.status,
 //       url: response.config.url,
 //       dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
@@ -64,14 +64,12 @@ const api = axios.create({
 //     return response;
 //   },
 //   (error) => {
-//     // Log detallado de errores para debugging
-//     console.error('[config/api] axios ERROR:', {
+//     console.error('[config/api] Error de petición:', {
 //       message: error.message,
 //       status: error.response?.status,
 //       data: error.response?.data,
 //       url: error.config?.url,
 //       baseURL: error.config?.baseURL,
-//       // Detectar si es error de red/CORS
 //       isNetworkError: !error.response && error.request,
 //       isCorsError: error.message?.includes('Network Error') || error.message?.includes('CORS')
 //     });

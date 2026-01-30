@@ -2,21 +2,23 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { healthService } from '../services/healthService';
 
 /**
- * Hook para monitorear la latencia del servidor en tiempo real.
+ * Hook para monitoreo de latencia del servidor en tiempo real.
  * Detecta errores de conexión, CORS y otros problemas de red.
+ * 
  * Obtiene datos del endpoint /health_check que retorna:
  * - checks.database.latency_ms: Latencia de la base de datos
  * - status: Estado general (healthy, warning, degraded, critical)
  * 
- * @param {number} interval - Intervalo de actualización en ms (default: 5000)
- * @param {number} maxDataPoints - Máximo de puntos a mantener (default: 30)
+ * @param {number} interval - Intervalo de actualización en milisegundos (valor por defecto: 5000)
+ * @param {number} maxDataPoints - Número máximo de puntos de datos a mantener (valor por defecto: 30)
+ * @returns {Object} Estado y funciones de control del monitoreo
  */
 export const useLatencyMonitor = (interval = 5000, maxDataPoints = 30) => {
   const [latencyData, setLatencyData] = useState([]);
   const [currentHealth, setCurrentHealth] = useState(null);
   const [isMonitoring, setIsMonitoring] = useState(true);
   const [error, setError] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'online', 'offline', 'error', 'connecting'
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // Estados: 'online', 'offline', 'error', 'connecting'
   const intervalRef = useRef(null);
   const consecutiveErrorsRef = useRef(0);
 
@@ -34,7 +36,7 @@ export const useLatencyMonitor = (interval = 5000, maxDataPoints = 30) => {
       const endTime = performance.now();
       const apiLatency = endTime - startTime;
 
-      // Conexión exitosa
+      // Registro de conexión exitosa
       consecutiveErrorsRef.current = 0;
       setConnectionStatus('online');
       setCurrentHealth(health);
@@ -64,7 +66,7 @@ export const useLatencyMonitor = (interval = 5000, maxDataPoints = 30) => {
       console.error('Error fetching health check:', err);
       consecutiveErrorsRef.current += 1;
 
-      // Determinar el tipo de error
+      // Clasificación del tipo de error para manejo apropiado
       let errorType = 'error';
       let errorMessage = 'Error de conexión con el servidor';
 
@@ -88,7 +90,7 @@ export const useLatencyMonitor = (interval = 5000, maxDataPoints = 30) => {
       setConnectionStatus(errorType === 'offline' || errorType === 'cors' ? 'offline' : 'error');
       setError(errorMessage);
       
-      // Actualizar currentHealth para reflejar el error
+      // Actualización del estado de salud para reflejar el error detectado
       setCurrentHealth({
         status: errorType === 'rate_limited' ? 'warning' : 'offline',
         error: errorMessage,
@@ -99,7 +101,7 @@ export const useLatencyMonitor = (interval = 5000, maxDataPoints = 30) => {
         }
       });
       
-      // Agregar punto con error
+      // Agregación de punto de datos con estado de error
       setLatencyData(prevData => {
         const updatedData = [...prevData, {
           time: timeLabel,

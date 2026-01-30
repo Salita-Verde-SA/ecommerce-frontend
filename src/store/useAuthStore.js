@@ -8,10 +8,10 @@ export const useAuthStore = create(
       isAuthenticated: false,
       isAdmin: false,
 
-      // "Login" simplificado - solo almacena datos del cliente
+      // Inicio de sesión simplificado - almacena datos del cliente
       login: (userData) => {
-        // Determinar si es admin basado en email o algún otro criterio
-        // Nota: El backend NO tiene roles, esto es solo para UI
+        // Determinación del rol de administrador basado en el email
+        // Nota: El backend no implementa roles, esta lógica es exclusiva de la UI
         const isAdmin = userData.email?.includes('admin');
         
         set({ 
@@ -21,6 +21,7 @@ export const useAuthStore = create(
         });
       },
 
+      // Actualización de datos del usuario autenticado
       updateUser: (userData) => {
         const currentState = get();
         set({
@@ -28,6 +29,7 @@ export const useAuthStore = create(
         });
       },
 
+      // Cierre de sesión y limpieza de estado
       logout: () => {
         set({ 
           user: null, 

@@ -16,11 +16,12 @@ import { motion } from 'framer-motion';
 
 /**
  * Componente de gráfico de latencia en tiempo real.
- * Muestra la latencia de la base de datos obtenida del endpoint /health_check
- * * Umbrales según documentación del backend:
- * - Healthy: < 100ms (verde)
- * - Warning: 100-500ms (amarillo)
- * - Critical: > 500ms (rojo)
+ * Visualiza la latencia de la base de datos obtenida del endpoint /health_check.
+ * 
+ * Umbrales de latencia según documentación del backend:
+ * - Healthy: < 100ms (indicador verde)
+ * - Warning: 100-500ms (indicador amarillo)
+ * - Critical: > 500ms (indicador rojo)
  */
 const LatencyChart = ({ 
   latencyData, 
@@ -30,23 +31,23 @@ const LatencyChart = ({
   onToggleMonitoring, 
   onClear 
 }) => {
-  // Umbrales definidos en el backend (controllers/health_check.py)
+  // Umbrales de latencia definidos en el backend (controllers/health_check.py)
   const THRESHOLDS = {
     warning: 100,  // ms
     critical: 500  // ms
   };
 
-  // Determinar si el sistema está offline
+  // Verificación del estado offline del sistema
   const isOffline = currentHealth?.status === 'offline' || 
                     currentHealth?.errorType === 'offline' || 
                     currentHealth?.errorType === 'cors';
 
-  // Obtener último valor de latencia
+  // Obtención del último valor de latencia registrado
   const lastLatency = latencyData.length > 0 
     ? latencyData[latencyData.length - 1]?.dbLatency 
     : null;
 
-  // Calcular estadísticas
+  // Cálculo de estadísticas de latencia
   const validLatencies = latencyData
     .filter(d => d.dbLatency !== null)
     .map(d => d.dbLatency);
@@ -63,7 +64,7 @@ const LatencyChart = ({
     ? Math.min(...validLatencies).toFixed(2)
     : '--';
 
-  // Determinar color y texto según estado
+  // Determinación de indicadores visuales según estado del sistema
   const getStatusInfo = () => {
     if (error || isOffline) {
       return {
@@ -116,7 +117,7 @@ const LatencyChart = ({
 
   const statusInfo = getStatusInfo();
 
-  // Tooltip personalizado
+  // Componente de tooltip personalizado para el gráfico
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;

@@ -19,28 +19,28 @@ const Checkout = () => {
   const shippingCost = totalPrice > 500 ? 0 : 25;
   const finalTotal = totalPrice + shippingCost;
 
-  // Estados de Dirección
+  // Estado de direcciones de envío
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
-  // CORRECCIÓN: Eliminados state y zip_code para consistencia con el backend
+  // Campos state y zip_code eliminados por consistencia con el esquema del backend
   const [newAddress, setNewAddress] = useState({ street: '', number: '', city: '' });
 
-  // Estados de Tarjeta
+  // Estado de datos de tarjeta de pago
   const [cardData, setCardData] = useState({ number: '', name: '', expiry: '', cvc: '' });
 
-  // Estados de UI
+  // Estado de interfaz de usuario
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onCloseAction: null });
 
-  // Redirección de seguridad
+  // Verificación de autenticación y contenido del carrito
   useEffect(() => {
     if (!isAuthenticated) navigate('/login');
     if (cart.length === 0 && !success) navigate('/');
   }, [isAuthenticated, cart, navigate, success]);
 
-  // Cargar Direcciones
+  // Carga de direcciones del usuario autenticado
   useEffect(() => {
     if (isAuthenticated && user?.id_key) {
       loadAddresses();
@@ -51,7 +51,7 @@ const Checkout = () => {
     try {
       const data = await addressService.getMyAddresses(user.id_key);
       
-      // Normalizar direcciones asegurando que 'id' siempre exista
+      // Normalización de direcciones asegurando la existencia del campo 'id'
       const normalizedAddresses = data.map(addr => {
         const normalizedId = addr.id_key || addr.id;
         return {
@@ -64,12 +64,12 @@ const Checkout = () => {
       setAddresses(normalizedAddresses);
 
       if (normalizedAddresses.length > 0) {
-        // Seleccionar la primera dirección automáticamente
+        // Selección automática de la primera dirección disponible
         const firstAddressId = normalizedAddresses[0].id;
         setSelectedAddressId(firstAddressId);
         setIsAddingAddress(false);
       } else {
-        // Si no hay direcciones, mostrar formulario de nueva
+        // Presentación del formulario si no existen direcciones
         setSelectedAddressId(null);
         setIsAddingAddress(true);
       }
@@ -80,7 +80,7 @@ const Checkout = () => {
 
   const handleAddressChange = (e) => setNewAddress({ ...newAddress, [e.target.name]: e.target.value });
 
-  // Nueva función para guardar dirección sin proceder al pago
+  // Guardado de nueva dirección sin proceder al pago
   const handleSaveNewAddress = async () => {
     if (!newAddress.street || !newAddress.city) {
       return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
@@ -91,16 +91,16 @@ const Checkout = () => {
       const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
       const newAddrId = savedAddr.id_key || savedAddr.id;
       
-      // Recargar lista de direcciones
+      // Recarga de la lista de direcciones
       await loadAddresses();
       
-      // Forzar la selección de la nueva dirección después de recargar
+      // Selección de la nueva dirección posterior a la recarga
       setTimeout(() => {
         setSelectedAddressId(newAddrId);
         setIsAddingAddress(false);
       }, 100);
       
-      // Limpiar formulario
+      // Limpieza del formulario
       setNewAddress({ street: '', number: '', city: '' });
       
       showAlert('success', '¡Guardada!', 'La dirección ha sido guardada correctamente.');
@@ -130,25 +130,25 @@ const Checkout = () => {
     }
   };
 
-  // Función para validar la fecha de expiración de la tarjeta
+  // Validación de fecha de expiración de tarjeta
   const isCardExpired = (expiry) => {
     if (!expiry || expiry.length < 5) return true;
     
     const [monthStr, yearStr] = expiry.split('/');
     const month = parseInt(monthStr, 10);
-    const year = parseInt(`20${yearStr}`, 10); // Asumimos años 20XX
+    const year = parseInt(`20${yearStr}`, 10); // Formato de año asumido: 20XX
     
     if (isNaN(month) || isNaN(year)) return true;
     if (month < 1 || month > 12) return true;
     
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // getMonth() es 0-indexed
+    const currentMonth = now.getMonth() + 1; // getMonth() retorna índice base 0
     
-    // Si el año es menor al actual, está expirada
+    // Verificación de expiración por año
     if (year < currentYear) return true;
     
-    // Si el año es igual al actual, verificar el mes
+    // Verificación de expiración por mes si el año es el actual
     if (year === currentYear && month < currentMonth) return true;
     
     return false;
@@ -156,12 +156,12 @@ const Checkout = () => {
 
   const showAlert = (type, title, message, onCloseAction = null) => setAlertModal({ isOpen: true, type, title, message, onCloseAction });
 
-  // Función para cerrar el modal y ejecutar acción opcional
+  // Cierre del modal y ejecución de acción posterior opcional
   const handleCloseAlert = () => {
     const action = alertModal.onCloseAction;
     setAlertModal({ ...alertModal, isOpen: false, onCloseAction: null });
     
-    // Ejecutar la acción después de cerrar el modal si existe
+    // Ejecución de la acción después del cierre si existe
     if (action) {
       action();
     }
@@ -173,9 +173,9 @@ const Checkout = () => {
     try {
       let finalAddressId = null;
 
-      // 1. Procesar Dirección (Nueva o Existente)
+      // 1. Procesamiento de dirección (nueva o existente)
       if (isAddingAddress) {
-        // Crear nueva dirección
+        // Creación de nueva dirección
         if (!newAddress.street || !newAddress.city) {
           setLoading(false);
           return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
@@ -185,7 +185,7 @@ const Checkout = () => {
         finalAddressId = savedAddr.id_key || savedAddr.id;
         
       } else {
-        // Usar dirección seleccionada existente
+        // Utilización de dirección seleccionada existente
         if (!selectedAddressId && addresses.length === 0) {
           setLoading(false);
           return showAlert('warning', 'Falta Dirección', 'Debes agregar una dirección de envío.');
@@ -220,19 +220,19 @@ const Checkout = () => {
         return showAlert('error', 'Fecha de Vencimiento Inválida', 'Ingresa la fecha de vencimiento en formato MM/YY.');
       }
       
-      // 3. Validar fecha de expiración
+      // 3. Validación de fecha de expiración de la tarjeta
       if (isCardExpired(cardData.expiry)) {
         setLoading(false);
         return showAlert('error', 'Tarjeta Expirada', 'La tarjeta ingresada está vencida. Por favor usa otra tarjeta.');
       }
       
-      // 4. Validar nombre del titular
+      // 4. Validación del nombre del titular
       if (!cardData.name || cardData.name.trim().length < 3) {
         setLoading(false);
         return showAlert('error', 'Nombre del Titular', 'Ingresa el nombre del titular de la tarjeta.');
       }
 
-      // 5. Crear Factura primero (requerida por el schema de Order)
+      // 5. Creación de factura (requerida por el esquema de Order)
       const billPayload = {
         total: finalTotal,
         discount: shippingCost === 0 ? 25 : 0,
@@ -264,7 +264,7 @@ const Checkout = () => {
       
       const billId = createdBill.id_key || createdBill.id;
 
-      // 4. Crear Orden con el bill_id
+      // 6. Creación de orden con el identificador de factura
       const orderPayload = {
         client_id: parseInt(user.id_key),
         bill_id: parseInt(billId),
@@ -284,7 +284,7 @@ const Checkout = () => {
       
       const orderId = createdOrder.id_key || createdOrder.id;
 
-      // 5. Crear detalles de orden para cada producto del carrito
+      // 7. Creación de detalles de orden para cada producto del carrito
       for (const item of cart) {
         try {
           await orderDetailService.create({
@@ -305,7 +305,7 @@ const Checkout = () => {
       
       clearCart();
       
-      // Mostrar modal de éxito - al cerrarlo se mostrará la pantalla de éxito
+      // Presentación del modal de éxito - al cerrar se muestra la pantalla de confirmación
       showAlert(
         'success', 
         '¡Compra Exitosa!', 

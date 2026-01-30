@@ -21,8 +21,8 @@ export const reviewService = {
 
   // Obtención de reseñas asociadas a un producto específico
   getByProduct: async (productId) => {
-    // El backend no tiene un endpoint específico por producto,
-    // así que filtramos del lado del cliente o usamos el endpoint general
+    // El backend no dispone de endpoint específico por producto,
+    // por lo que el filtrado se realiza en el cliente
     try {
       const response = await api.get('/reviews/');
       return response.data
@@ -34,7 +34,7 @@ export const reviewService = {
     }
   },
 
-  // Crear una nueva reseña
+  // Creación de una nueva reseña
   create: async (reviewData) => {
     const payload = {
       product_id: parseInt(reviewData.product_id),
@@ -50,7 +50,7 @@ export const reviewService = {
     };
   },
 
-  // Eliminar reseña
+  // Eliminación de una reseña por identificador
   delete: async (id) => {
     await api.delete(`/reviews/${id}`);
     return true;

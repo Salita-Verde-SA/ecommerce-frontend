@@ -6,6 +6,7 @@ export const useCartStore = create(
     (set, get) => ({
       cart: [],
 
+      // Adición de producto al carrito con cantidad especificada
       addToCart: (product, quantity = 1) => {
         const { cart } = get();
         const existingItem = cart.find(item => item.id === product.id);
@@ -23,10 +24,12 @@ export const useCartStore = create(
         }
       },
 
+      // Eliminación de producto del carrito por identificador
       removeFromCart: (productId) => {
         set({ cart: get().cart.filter(item => item.id !== productId) });
       },
 
+      // Actualización de cantidad de un producto en el carrito
       updateQuantity: (productId, quantity) => {
         if (quantity < 1) return;
         set({
@@ -36,14 +39,15 @@ export const useCartStore = create(
         });
       },
 
+      // Vaciado completo del carrito
       clearCart: () => set({ cart: [] }),
 
-      // Getters útiles
+      // Métodos de cálculo auxiliares
       getTotalItems: () => get().cart.reduce((acc, item) => acc + item.quantity, 0),
       getTotalPrice: () => get().cart.reduce((acc, item) => acc + (item.price * item.quantity), 0),
     }),
     {
-      name: 'techstore-cart-storage', // Nombre en localStorage
+      name: 'techstore-cart-storage', // Clave de almacenamiento en localStorage
     }
   )
 );

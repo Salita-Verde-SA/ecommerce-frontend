@@ -73,7 +73,7 @@ const ProductDetail = () => {
       showAlert('success', '¡Gracias!', 'Tu reseña ha sido publicada exitosamente.');
     } catch (error) { 
       console.error(error);
-      // Mensaje de error más específico basado en la respuesta
+      // Generación de mensaje de error específico basado en la respuesta del servidor
       let errorMessage = 'Ocurrió un error al publicar tu reseña. Inténtalo de nuevo.';
       if (error.response?.data?.detail) {
         errorMessage = typeof error.response.data.detail === 'string' 
@@ -89,7 +89,7 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        {/* Breadcrumb / Back Navigation */}
+        {/* Navegación de retorno */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center text-text-secondary hover:text-primary transition-colors text-sm font-medium group">
             <ArrowLeft size={18} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
@@ -97,7 +97,7 @@ const ProductDetail = () => {
           </Link>
         </div>
 
-        {/* Product Main Section - Nuevo diseño sin imagen */}
+        {/* Sección principal del producto */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }}

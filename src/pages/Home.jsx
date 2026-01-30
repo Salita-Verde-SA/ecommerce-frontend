@@ -19,13 +19,13 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Obtenemos productos y categorías en paralelo
+        // Obtención paralela de productos y categorías
         const [prodData, catData] = await Promise.all([
           productService.getAll(),
           categoryService.getAll()
         ]);
         
-        // Asignamos el nombre de la categoría manualmente cruzando los datos.
+        // Asignación del nombre de categoría mediante cruce de datos
         const productsWithCategories = prodData.map(product => {
           const category = catData.find(c => c.id === product.category_id);
           return {
@@ -36,7 +36,7 @@ const Home = () => {
 
         setProducts(productsWithCategories);
         setCategories(catData);
-        // Inicializamos los productos filtrados con la data ya corregida
+        // Inicialización de productos filtrados con datos procesados
         setFilteredProducts(productsWithCategories);
       } catch (error) {
         console.error("Error cargando datos:", error);
@@ -114,7 +114,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* STRIP: border-ui-border */}
+      {/* Barra de características destacadas */}
       <div className="bg-surface border-y border-ui-border relative z-20 -mt-8 mx-0 md:mx-8 lg:mx-12 rounded-none md:rounded-2xl shadow-xl shadow-black/20 backdrop-blur-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-ui-border">
           {[
@@ -159,7 +159,7 @@ const Home = () => {
       </section>
 
       <section id="productos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pb-32 relative z-10">
-        {/* CORRECCIÓN: Alineación centrada en móvil, a la izquierda en desktop */}
+        {/* Encabezado de sección con alineación responsiva */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 gap-4 border-b border-ui-border pb-6">
           <div className="text-center md:text-left">
             <h2 className="text-4xl font-bold text-text-primary mb-3 tracking-tight">Catálogo <span className="text-primary">.NET</span></h2>

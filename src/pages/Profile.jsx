@@ -22,7 +22,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Estado para la edición de perfil
+  // Estado para el modo de edición del perfil
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -32,7 +32,7 @@ const Profile = () => {
   });
   const [updatingProfile, setUpdatingProfile] = useState(false);
 
-  // Modales
+  // Estado de los modales del componente
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -63,7 +63,7 @@ const Profile = () => {
         }
       } catch (err) { 
         console.error(err);
-        // Usar modal en lugar de setError para errores de carga
+        // Se utiliza modal en lugar de setError para notificación de errores de carga
         showAlert('error', 'Error de Carga', 'No se pudieron cargar los datos. Intente nuevamente.');
       } finally { 
         setLoading(false); 
@@ -74,7 +74,7 @@ const Profile = () => {
     }
   }, [activeTab, user?.id_key]);
 
-  // Inicializar formulario de edición cuando se carga el usuario o se activa la edición
+  // Inicialización del formulario de edición al cargar datos del usuario o activar modo edición
   useEffect(() => {
     if (user) {
       setEditForm({
@@ -87,14 +87,14 @@ const Profile = () => {
   }, [user]);
 
   const handleLogout = () => { 
-    // Primero redirigimos, luego hacemos logout para evitar que PrivateRoute redirija a /login
+    // Se realiza la redirección antes del logout para evitar interferencias con PrivateRoute
     window.location.href = '/login';
     logout(); 
   };
 
-  // --- LÓGICA DE ACTUALIZACIÓN DE PERFIL ---
+  // Manejo del estado de edición del perfil
   const handleEditToggle = () => {
-    // Si cancelamos, restauramos los datos originales
+    // En caso de cancelación, se restauran los datos originales
     if (isEditing) {
       setEditForm({
         name: user.name || '',
@@ -116,9 +116,8 @@ const Profile = () => {
 
     setUpdatingProfile(true);
     try {
-      // CORRECCIÓN CRÍTICA:
-      // Solo enviamos los campos editables. 
-      // NO enviar 'id_key', 'addresses' ni 'orders' en el body para evitar conflictos (Error 500).
+      // Se envían exclusivamente los campos editables
+      // Los campos 'id_key', 'addresses' y 'orders' se excluyen para evitar conflictos con el backend
       const payload = {
         name: editForm.name,
         lastname: editForm.lastname,
@@ -126,10 +125,10 @@ const Profile = () => {
         telephone: editForm.telephone
       };
 
-      // El ID va SOLO en la URL (primer argumento), el payload limpio va en el body (segundo argumento)
+      // El identificador se envía en la URL, el payload limpio en el body
       const updatedData = await clientService.update(user.id_key, payload);
       
-      // Actualizamos el estado global de autenticación
+      // Actualización del estado global de autenticación con los nuevos datos
       updateUser({
         ...user,
         name: updatedData.name,
@@ -212,7 +211,7 @@ const Profile = () => {
     }
   };
 
-  // Mapeo de status integer a string legible
+  // Mapeo de valores de estado (entero) a texto descriptivo
   const STATUS_MAP = {
     1: 'Pendiente',
     2: 'En Progreso',
@@ -228,25 +227,25 @@ const Profile = () => {
   };
 
   const getStatusIcon = (status) => {
-    // Normalizar: si es string, intentar convertir; si es número, usar directamente
+    // Normalización del valor de estado para manejo consistente
     const statusValue = typeof status === 'number' ? status : 
       (typeof status === 'string' ? status.toLowerCase() : null);
     
-    // Manejar como número (del backend)
+    // Manejo de valores numéricos según especificación del backend
     if (typeof statusValue === 'number') {
       switch (statusValue) {
-        case 3: // DELIVERED
+        case 3: // Estado: ENTREGADO
           return <CheckCircle size={16} className="text-green-400" />;
-        case 2: // IN_PROGRESS
+        case 2: // Estado: EN PROCESO
           return <Truck size={16} className="text-blue-400" />;
-        case 4: // CANCELED
+        case 4: // Estado: CANCELADO
           return <AlertCircle size={16} className="text-red-400" />;
-        default: // PENDING (1) u otro
+        default: // Estado: PENDIENTE (1) u otros valores
           return <Clock size={16} className="text-yellow-400" />;
       }
     }
     
-    // Fallback para strings (compatibilidad)
+    // Manejo alternativo para valores de tipo cadena (retrocompatibilidad)
     switch (statusValue) {
       case 'completed':
       case 'completado':
@@ -263,25 +262,25 @@ const Profile = () => {
   };
 
   const getStatusStyle = (status) => {
-    // Normalizar: si es string, intentar convertir; si es número, usar directamente
+    // Normalización del valor de estado para manejo consistente
     const statusValue = typeof status === 'number' ? status : 
       (typeof status === 'string' ? status.toLowerCase() : null);
     
-    // Manejar como número (del backend)
+    // Manejo de valores numéricos según especificación del backend
     if (typeof statusValue === 'number') {
       switch (statusValue) {
-        case 3: // DELIVERED
+        case 3: // Estado: ENTREGADO
           return 'bg-green-500/10 text-green-400 border border-green-500/20';
-        case 2: // IN_PROGRESS
+        case 2: // Estado: EN PROCESO
           return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-        case 4: // CANCELED
+        case 4: // Estado: CANCELADO
           return 'bg-red-500/10 text-red-400 border border-red-500/20';
-        default: // PENDING (1) u otro
+        default: // Estado: PENDIENTE (1) u otros valores
           return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
       }
     }
     
-    // Fallback para strings (compatibilidad)
+    // Manejo alternativo para valores de tipo cadena (retrocompatibilidad)
     switch (statusValue) {
       case 'completed':
       case 'completado':

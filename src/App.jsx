@@ -14,7 +14,7 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import AccessDenied from './pages/AccessDenied';
 
-// Ruta protegida para ADMIN - redirige a /403 si no tiene permisos
+// Ruta protegida para administradores - redirecciona a /403 si no tiene permisos
 const AdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin } = useAuthStore();
   
@@ -24,7 +24,7 @@ const AdminRoute = ({ children }) => {
   return children;
 };
 
-// Ruta protegida para usuarios autenticados
+// Ruta protegida para usuarios autenticados - redirecciona a /login si no está autenticado
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
   return isAuthenticated ? children : <Navigate to="/login" replace />;

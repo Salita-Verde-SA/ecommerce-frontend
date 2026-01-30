@@ -32,7 +32,7 @@ const Header = () => {
     window.location.href = '/';
   };
 
-  // CORRECCIÓN: Mapeo explícito de Etiquetas vs IDs para evitar errores con tildes (Categorías -> categorias)
+  // Mapeo de etiquetas de navegación con sus identificadores de sección
   const navLinks = [
     { name: 'Inicio', id: 'inicio' },
     { name: 'Categorías', id: 'categorias' },
@@ -40,12 +40,12 @@ const Header = () => {
   ];
 
   const handleNavigation = (sectionId) => {
-    setIsMenuOpen(false); // Cerramos menú móvil si está abierto
+    setIsMenuOpen(false); // Cierre del menú móvil si está abierto
     
-    // Si no estamos en el home, vamos primero al home
+    // Navegación a la página principal si no se encuentra en ella
     if (location.pathname !== '/') {
       navigate('/');
-      // Pequeño timeout para dar tiempo a que cargue el DOM de Home
+      // Tiempo de espera para permitir la carga del DOM
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -53,7 +53,7 @@ const Header = () => {
         }
       }, 300);
     } else {
-      // Si ya estamos en home, solo scrollea
+      // Desplazamiento directo si ya se encuentra en la página principal
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -74,7 +74,7 @@ const Header = () => {
       <header className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-ui-border transition-all duration-300 shadow-lg shadow-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* LOGO */}
+            {/* Logotipo de la aplicación */}
             <Link 
               to="/" 
               onClick={() => { setSearchTerm(''); window.scrollTo({top: 0, behavior: 'smooth'}); }} 
@@ -86,7 +86,7 @@ const Header = () => {
               <span className="font-bold text-xl tracking-tight text-text-primary">Nexus Hardware</span>
             </Link>
 
-            {/* DESKTOP NAVIGATION */}
+            {/* Navegación principal para escritorio */}
             <nav className="hidden md:flex space-x-8">
               {navLinks.map((item) => (
                 <button 

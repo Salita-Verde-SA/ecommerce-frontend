@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Configuración de axios
+// Configuración de instancia axios para pruebas
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   headers: {
@@ -9,11 +9,11 @@ const api = axios.create({
   withCredentials: false
 });
 
-// Interceptor de respuesta
+// Interceptor de respuesta para manejo de errores
 api.interceptors.response.use(
   response => response,
   error => {
-    // Manejo de errores
+    // Registro de errores de API
     if (error.response) {
       console.error('API Error:', {
         status: error.response.status,
@@ -75,7 +75,7 @@ describe('api error handling behavior', () => {
       config: { url: '/test-url' }
     };
 
-    // Simular comportamiento del interceptor
+    // Simulación del comportamiento del interceptor de errores
     if (mockError.response) {
       console.error('API Error:', {
         status: mockError.response.status,
@@ -101,7 +101,7 @@ describe('api error handling behavior', () => {
       config: { url: '/test-url' }
     };
 
-    // Simular comportamiento del interceptor
+    // Simulación del comportamiento del interceptor de errores
     if (mockError.response) {
       console.error('API Error:', {
         status: mockError.response.status,

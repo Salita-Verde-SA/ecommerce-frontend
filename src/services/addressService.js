@@ -1,26 +1,26 @@
 import api from '../config/api';
 
 export const addressService = {
-  // Obtener todas las direcciones
+  // Obtención de todas las direcciones registradas
   getAll: async () => {
     const response = await api.get('/addresses/');
     return response.data;
   },
 
-  // Obtener direcciones de un cliente
+  // Obtención de direcciones asociadas a un cliente específico
   getMyAddresses: async (clientId) => {
     const response = await api.get('/addresses/');
-    // Filtrar por client_id en el frontend si el backend no soporta filtrado
+    // Filtrado por client_id realizado en el frontend
     return response.data.filter(addr => addr.client_id === clientId);
   },
 
-  // Obtener por ID (CORREGIDO: Sin barra final)
+  // Obtención de dirección por identificador
   getById: async (id) => {
     const response = await api.get(`/addresses/${id}`);
     return response.data;
   },
 
-  // Crear dirección
+  // Creación de nueva dirección
   create: async (addressData) => {
     const payload = {
       street: addressData.street,
@@ -32,7 +32,7 @@ export const addressService = {
     return response.data;
   },
 
-  // Actualizar dirección (CORREGIDO: Sin barra final)
+  // Actualización de dirección existente
   update: async (id, addressData) => {
     const payload = {
       street: addressData.street,
@@ -43,7 +43,7 @@ export const addressService = {
     return response.data;
   },
 
-  // Eliminar dirección (CORREGIDO: Sin barra final)
+  // Eliminación de dirección por identificador
   delete: async (id) => {
     await api.delete(`/addresses/${id}`);
     return true;
