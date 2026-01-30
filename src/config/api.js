@@ -39,6 +39,20 @@ const api = axios.create({
   withCredentials: false,
 });
 
+// Interceptor de petición para depuración: mostrar la URL final que se enviará
+api.interceptors.request.use((config) => {
+  try {
+    const base = config.baseURL || '';
+    const url = config.url || '';
+    // Intentamos construir la URL absoluta para inspección
+    const final = new URL(url, base).href;
+    console.info('[config/api] axios request ->', { base, url, final });
+  } catch (e) {
+    console.warn('[config/api] axios request - no se pudo construir URL:', e);
+  }
+  return config;
+});
+
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => response,
