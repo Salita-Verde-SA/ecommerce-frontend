@@ -27,7 +27,7 @@ const NORMALIZED_API_URL = (() => {
 console.info('[config/api] API_URL raw:', API_URL);
 console.info('[config/api] API_URL normalized:', NORMALIZED_API_URL);
 console.info('[config/api] import.meta.env.VITE_API_URL:', import.meta?.env?.VITE_API_URL);
-console.info('[config/api] global.importMetaEnv.VITE_API_URL:', global?.importMetaEnv?.VITE_API_URL);
+// console.info('[config/api] global.importMetaEnv.VITE_API_URL:', global?.importMetaEnv?.VITE_API_URL);
 /* eslint-enable no-console */
 
 const api = axios.create({
