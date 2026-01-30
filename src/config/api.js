@@ -13,6 +13,13 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+// Log para depuración (solo en desarrollo)
+if (process.env.NODE_ENV === 'development') {
+  console.log('API_URL resuelta:', API_URL);
+  console.log('VITE_API_URL desde import.meta.env:', import.meta.env?.VITE_API_URL);
+  console.log('VITE_API_URL desde global.importMetaEnv:', global?.importMetaEnv?.VITE_API_URL);
+}
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
