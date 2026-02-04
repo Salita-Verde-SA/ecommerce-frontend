@@ -327,6 +327,27 @@ const Profile = () => {
     4: 'Cancelado'
   };
 
+  // Mapeo de tipos de pago (entero) a texto descriptivo
+  const PAYMENT_TYPE_MAP = {
+    1: 'Efectivo',
+    2: 'Tarjeta',
+    3: 'Débito',
+    4: 'Crédito',
+    5: 'Transferencia'
+  };
+
+  const getPaymentTypeText = (paymentType) => {
+    if (typeof paymentType === 'number') {
+      return PAYMENT_TYPE_MAP[paymentType] || 'Desconocido';
+    }
+    // Si es string, intentar convertir a número o devolver como está
+    const num = parseInt(paymentType, 10);
+    if (!isNaN(num) && PAYMENT_TYPE_MAP[num]) {
+      return PAYMENT_TYPE_MAP[num];
+    }
+    return paymentType || 'Desconocido';
+  };
+
   const getStatusText = (status) => {
     if (typeof status === 'number') {
       return STATUS_MAP[status] || 'Desconocido';
@@ -511,7 +532,7 @@ const Profile = () => {
                               <tr key={bill.id} className="hover:bg-white/5">
                                 <td className="p-4 font-mono text-sm font-medium text-primary">{bill.bill_number}</td>
                                 <td className="p-4 text-sm text-text-primary">{bill.date}</td>
-                                <td className="p-4 text-sm text-text-secondary">{bill.payment_type}</td>
+                                <td className="p-4 text-sm text-text-secondary">{getPaymentTypeText(bill.payment_type)}</td>
                                 <td className="p-4 text-right font-bold text-text-primary">${bill.total?.toFixed(2)}</td>
                               </tr>
                             ))}
