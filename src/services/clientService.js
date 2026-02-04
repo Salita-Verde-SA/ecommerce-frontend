@@ -9,7 +9,7 @@ export const clientService = {
 
   // Obtención de cliente por identificador (GET /clients/{id})
   getById: async (id) => {
-    const response = await api.get(`/clients/${id}/`); 
+    const response = await api.get(`/clients/${id}`); 
     return response.data;
   },
 
@@ -33,7 +33,7 @@ export const clientService = {
 
   // Eliminación de cliente (DELETE /clients/{id})
   delete: async (id) => {
-    await api.delete(`/clients/${id}/`);
+    await api.delete(`/clients/${id}`);
   },
 
   // Búsqueda de cliente por dirección de correo electrónico
