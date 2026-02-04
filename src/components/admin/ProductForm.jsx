@@ -69,7 +69,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
 
   const inputClasses = "w-full p-3 pl-10 border border-ui-border rounded-xl outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text-primary placeholder-text-muted transition-all shadow-sm";
   const labelClasses = "block text-sm font-medium mb-2 text-text-secondary uppercase tracking-wider";
-  const iconClasses = "absolute left-3 top-[38px] text-text-secondary pointer-events-none";
+  const iconClasses = "absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none";
 
   if (!isOpen) return null;
 
@@ -97,61 +97,69 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              <div className="col-span-1 md:col-span-2 relative group">
+              <div className="col-span-1 md:col-span-2 group">
                 <label className={labelClasses}>Nombre del Producto</label>
-                <Box size={18} className={iconClasses} />
-                <input 
-                  required 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  className={inputClasses} 
-                  placeholder="Ej: Laptop Gamer X1" 
-                />
+                <div className="relative">
+                  <Box size={18} className={iconClasses} />
+                  <input 
+                    required 
+                    value={formData.name} 
+                    onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                    className={inputClasses} 
+                    placeholder="Ej: Laptop Gamer X1" 
+                  />
+                </div>
               </div>
               
-              <div className="col-span-1 relative group">
+              <div className="col-span-1 group">
                 <label className={labelClasses}>Precio (USD)</label>
-                <DollarSign size={18} className={iconClasses} />
-                <input 
-                  required 
-                  type="number" 
-                  step="0.01" 
-                  min="0.01" 
-                  value={formData.price} 
-                  onChange={(e) => setFormData({...formData, price: e.target.value})} 
-                  className={inputClasses} 
-                  placeholder="0.00" 
-                />
+                <div className="relative">
+                  <DollarSign size={18} className={iconClasses} />
+                  <input 
+                    required 
+                    type="number" 
+                    step="0.01" 
+                    min="0.01" 
+                    value={formData.price} 
+                    onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                    className={inputClasses} 
+                    placeholder="0.00" 
+                  />
+                </div>
               </div>
               
-              <div className="col-span-1 relative group">
+              <div className="col-span-1 group">
                 <label className={labelClasses}>Stock Disponible</label>
-                <Layers size={18} className={iconClasses} />
-                <input 
-                  required 
-                  type="number" 
-                  min="0" 
-                  value={formData.stock} 
-                  onChange={(e) => setFormData({...formData, stock: e.target.value})} 
-                  className={inputClasses} 
-                  placeholder="0" 
-                />
+                <div className="relative">
+                  <Layers size={18} className={iconClasses} />
+                  <input 
+                    required 
+                    type="number" 
+                    min="0" 
+                    value={formData.stock} 
+                    onChange={(e) => setFormData({...formData, stock: e.target.value})} 
+                    className={inputClasses} 
+                    placeholder="0" 
+                  />
+                </div>
               </div>
               
-              <div className="col-span-1 md:col-span-2 relative group">
+              <div className="col-span-1 md:col-span-2 group">
                 <label className={labelClasses}>Categoría</label>
-                <Tag size={18} className={iconClasses} />
-                <select 
-                  required 
-                  value={formData.category_id} 
-                  onChange={(e) => setFormData({...formData, category_id: e.target.value})} 
-                  className={`${inputClasses} appearance-none cursor-pointer`}
-                >
-                  <option value="">Selecciona una categoría</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={String(cat.id)} className="bg-surface text-text-primary">{cat.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Tag size={18} className={iconClasses} />
+                  <select 
+                    required 
+                    value={formData.category_id} 
+                    onChange={(e) => setFormData({...formData, category_id: e.target.value})} 
+                    className={`${inputClasses} appearance-none cursor-pointer`}
+                  >
+                    <option value="">Selecciona una categoría</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={String(cat.id)} className="bg-surface text-text-primary">{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               
               {/* Sección de Descripción eliminada tal como se solicitó */}
