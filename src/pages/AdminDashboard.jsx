@@ -278,10 +278,36 @@ const AdminDashboard = () => {
 
   const healthColor = getHealthColor();
 
+  // Mapeo de valores de estado numéricos a texto
+  const STATUS_MAP = {
+    1: 'Pendiente',
+    2: 'En Progreso',
+    3: 'Entregado',
+    4: 'Cancelado'
+  };
+
+  const getStatusText = (status) => {
+    if (typeof status === 'number') {
+      return STATUS_MAP[status] || 'Desconocido';
+    }
+    return status || 'Desconocido';
+  };
+
   const getStatusStyle = (status) => {
-    const s = status?.toLowerCase();
-    if (s === 'completed' || s === 'completado') return 'bg-green-500/10 text-green-400 border-green-500/20';
-    if (s === 'shipped' || s === 'enviado') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    // Normalizar status a número si es necesario
+    const statusNum = typeof status === 'number' ? status : parseInt(status, 10);
+    
+    // Status numéricos del backend
+    if (statusNum === 3) return 'bg-green-500/10 text-green-400 border-green-500/20'; // Entregado
+    if (statusNum === 2) return 'bg-blue-500/10 text-blue-400 border-blue-500/20';   // En Progreso
+    if (statusNum === 4) return 'bg-red-500/10 text-red-400 border-red-500/20';      // Cancelado
+    if (statusNum === 1) return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'; // Pendiente
+    
+    // Fallback para strings (retrocompatibilidad)
+    const s = typeof status === 'string' ? status.toLowerCase() : '';
+    if (s === 'completed' || s === 'completado' || s === 'entregado') return 'bg-green-500/10 text-green-400 border-green-500/20';
+    if (s === 'shipped' || s === 'enviado' || s === 'en progreso') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    if (s === 'cancelled' || s === 'cancelado') return 'bg-red-500/10 text-red-400 border-red-500/20';
     return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
   };
 
@@ -427,7 +453,7 @@ const AdminDashboard = () => {
                       <td className="p-4 font-mono text-primary">#{o.id}</td>
                       <td className="p-4 text-text-primary">{o.date}</td>
                       <td className="p-4 font-bold text-text-primary">${parseFloat(o.total).toFixed(2)}</td>
-                      <td className="p-4"><span className={`px-2 py-1 rounded-md text-xs font-bold border ${getStatusStyle(o.status)}`}>{o.status}</span></td>
+                      <td className="p-4"><span className={`px-2 py-1 rounded-md text-xs font-bold border ${getStatusStyle(o.status)}`}>{getStatusText(o.status)}</span></td>
                       <td className="p-4 text-right">
                         <button onClick={() => handleViewOrder(o)} className="text-primary hover:bg-primary/10 p-2 rounded-lg flex items-center gap-2 ml-auto text-sm font-medium"><Eye size={16}/> Ver</button>
                       </td>
