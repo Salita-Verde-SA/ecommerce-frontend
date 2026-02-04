@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, CreditCard, MapPin, Plus, Check, X, Calendar, Lock, Loader, AlertCircle, Store, Truck, HandCoins } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, MapPin, Plus, Check, X, Calendar, Lock, Loader, AlertCircle, Store, Truck, Hand } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { addressService } from '../services/addressService';
@@ -560,7 +560,7 @@ const Checkout = () => {
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                       deliveryMethod === 'hand' ? 'bg-primary text-black' : 'bg-ui-border/50 text-text-muted group-hover:bg-primary/20 group-hover:text-primary'
                     }`}>
-                      <HandCoins size={20} />
+                      <Hand size={20} />
                     </div>
                     <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-auto transition-colors ${
                       deliveryMethod === 'hand' ? 'border-primary bg-primary' : 'border-ui-border group-hover:border-primary/50'
@@ -825,7 +825,7 @@ const Checkout = () => {
                   <div className="flex justify-between text-text-secondary text-sm items-center">
                     <span className="flex items-center gap-2">
                       {deliveryMethod === 'store' && <><Store size={14} className="text-primary"/> Retiro en Tienda</>}
-                      {deliveryMethod === 'hand' && <><HandCoins size={14} className="text-primary"/> Entrega en Mano</>}
+                      {deliveryMethod === 'hand' && <><Hand size={14} className="text-primary"/> Entrega en Mano</>}
                       {deliveryMethod === 'delivery' && <><Truck size={14} className="text-primary"/> Envío a Domicilio</>}
                     </span> 
                     {shippingCost === 0 ? (
