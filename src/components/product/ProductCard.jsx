@@ -77,6 +77,7 @@ const ProductCard = ({ product }) => {
           <div className="flex gap-2">
             <Link 
               to={`/product/${product.id}`}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="flex items-center gap-1 bg-background border border-ui-border text-text-secondary hover:text-primary hover:border-primary/50 px-3 py-1.5 rounded-lg transition-all text-xs font-medium"
             >
               Ver <ArrowRight size={12} />
