@@ -252,6 +252,13 @@ const AdminDashboard = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    // Validar que el orderId sea válido
+    if (!orderId) {
+      console.error('Error: orderId es undefined o null', { orderId, selectedOrder });
+      showAlert('error', 'Error', 'No se pudo identificar el pedido.');
+      return;
+    }
+    
     if (selectedOrder?.status === newStatus) return; // Sin cambios
     
     setUpdatingStatus(true);
@@ -259,7 +266,7 @@ const AdminDashboard = () => {
       await orderService.updateStatus(orderId, newStatus);
       // Actualizar estado local
       setSelectedOrder({ ...selectedOrder, status: newStatus });
-      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      setOrders(orders.map(o => (o.id === orderId || o.id_key === orderId) ? { ...o, status: newStatus } : o));
       showAlert('success', 'Estado Actualizado', `El pedido #${orderId} ahora está "${STATUS_MAP[newStatus]}".`);
     } catch (e) {
       console.error('Error actualizando estado:', e);
@@ -538,7 +545,7 @@ const AdminDashboard = () => {
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center p-6 border-b border-ui-border shrink-0">
                   <div>
-                    <h3 className="text-xl font-bold text-text-primary">Orden #{selectedOrder.id}</h3>
+                    <h3 className="text-xl font-bold text-text-primary">Orden #{selectedOrder.id || selectedOrder.id_key}</h3>
                     <p className="text-xs text-text-muted mt-1">Factura #{selectedOrder.bill_id}</p>
                   </div>
                   <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-background rounded-full text-text-secondary hover:text-text-primary"><X size={20}/></button>
@@ -578,11 +585,12 @@ const AdminDashboard = () => {
                       {Object.entries(STATUS_MAP).map(([value, label]) => {
                         const numValue = parseInt(value);
                         const isSelected = selectedOrder.status === numValue;
+                        const orderId = selectedOrder.id || selectedOrder.id_key;
                         return (
                           <button
                             key={value}
-                            onClick={() => handleUpdateOrderStatus(selectedOrder.id, numValue)}
-                            disabled={updatingStatus}
+                            onClick={() => handleUpdateOrderStatus(orderId, numValue)}
+                            disabled={updatingStatus || !orderId}
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                               isSelected
                                 ? getStatusStyle(numValue)
