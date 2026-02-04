@@ -106,12 +106,16 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [successModal, setSuccessModal] = useState({ isOpen: false, orderId: null });
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onCloseAction: null });
+  
+  // Flag para evitar redirección durante proceso de compra exitosa
+  const [purchaseCompleted, setPurchaseCompleted] = useState(false);
 
   // Verificación de autenticación y contenido del carrito
   useEffect(() => {
     if (!isAuthenticated) navigate('/login');
-    if (cart.length === 0 && !successModal.isOpen) navigate('/');
-  }, [isAuthenticated, cart, navigate, successModal.isOpen]);
+    // Solo redirigir si el carrito está vacío Y no se ha completado una compra
+    if (cart.length === 0 && !successModal.isOpen && !purchaseCompleted) navigate('/');
+  }, [isAuthenticated, cart, navigate, successModal.isOpen, purchaseCompleted]);
 
   // Carga de direcciones del usuario autenticado
   useEffect(() => {
@@ -376,7 +380,10 @@ const Checkout = () => {
         }
       }
       
-      // Mostrar modal de éxito ANTES de limpiar carrito para evitar redirección
+      // Marcar compra como completada para evitar redirección automática
+      setPurchaseCompleted(true);
+      
+      // Mostrar modal de éxito
       setSuccessModal({ isOpen: true, orderId: orderId });
       
       // Limpiar carrito después de mostrar el modal
