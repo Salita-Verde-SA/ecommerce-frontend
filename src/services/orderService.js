@@ -42,7 +42,7 @@ export const orderService = {
 
   // Obtención de orden por identificador
   getById: async (id) => {
-    const response = await api.get(`/orders/${id}/`);
+    const response = await api.get(`/orders/${id}`);
     return response.data;
   },
 
@@ -65,7 +65,7 @@ export const orderService = {
     // Se obtiene la orden completa antes de actualizar
     const order = await orderService.getById(id);
     // Actualización exclusiva del campo status
-    const response = await api.put(`/orders/${id}/`, {
+    const response = await api.put(`/orders/${id}`, {
       ...order,
       status: status
     });
