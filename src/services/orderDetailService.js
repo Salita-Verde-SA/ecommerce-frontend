@@ -9,9 +9,23 @@ export const orderDetailService = {
 
   // Obtención de detalles correspondientes a una orden específica
   getByOrderId: async (orderId) => {
-    const response = await api.get('/order_details/');
-    // Filtrado por order_id realizado en el frontend
-    return response.data
+    // Obtener detalles y productos en paralelo
+    const [detailsRes, productsRes] = await Promise.all([
+      api.get('/order_details/'),
+      api.get('/products/')
+    ]);
+    
+    const allDetails = detailsRes.data;
+    const allProducts = productsRes.data;
+    
+    // Crear mapa de productos para búsqueda rápida
+    const productMap = {};
+    allProducts.forEach(p => {
+      productMap[p.id_key] = p.name;
+    });
+    
+    // Filtrado por order_id y enriquecimiento con nombre de producto
+    return allDetails
       .filter(detail => detail.order_id === parseInt(orderId))
       .map(detail => ({
         id: detail.id_key,
@@ -20,7 +34,7 @@ export const orderDetailService = {
         subtotal: detail.quantity * parseFloat(detail.price),
         order_id: detail.order_id,
         product_id: detail.product_id,
-        product_name: detail.product?.name || `Producto #${detail.product_id}`
+        product_name: detail.product?.name || productMap[detail.product_id] || `Producto #${detail.product_id}`
       }));
   },
 

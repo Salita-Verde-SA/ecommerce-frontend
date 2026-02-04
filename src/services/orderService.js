@@ -1,4 +1,5 @@
 import api from '../config/api';
+import { orderDetailService } from './orderDetailService';
 
 export const orderService = {
   // Obtención de todas las órdenes registradas
@@ -11,17 +12,32 @@ export const orderService = {
   getMyOrders: async (clientId) => {
     const response = await api.get('/orders/');
     // Filtrado de órdenes por cliente realizado en el frontend
-    return response.data
-      .filter(order => order.client_id === clientId)
-      .map(order => ({
-        id: order.id_key,
-        date: order.date,
-        total: parseFloat(order.total),
-        status: order.status,
-        delivery_method: order.delivery_method,
-        client_id: order.client_id,
-        bill_id: order.bill_id
-      }));
+    const filteredOrders = response.data.filter(order => order.client_id === clientId);
+    
+    // Cargar detalles de cada orden
+    const ordersWithDetails = await Promise.all(
+      filteredOrders.map(async (order) => {
+        const orderId = order.id_key || order.id;
+        let details = [];
+        try {
+          details = await orderDetailService.getByOrderId(orderId);
+        } catch (err) {
+          console.error(`Error cargando detalles de orden ${orderId}:`, err);
+        }
+        return {
+          id: orderId,
+          date: order.date,
+          total: parseFloat(order.total),
+          status: order.status,
+          delivery_method: order.delivery_method,
+          client_id: order.client_id,
+          bill_id: order.bill_id,
+          details: details
+        };
+      })
+    );
+    
+    return ordersWithDetails;
   },
 
   // Obtención de orden por identificador
