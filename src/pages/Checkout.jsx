@@ -376,10 +376,11 @@ const Checkout = () => {
         }
       }
       
-      clearCart();
-      
-      // Mostrar modal de éxito de compra
+      // Mostrar modal de éxito ANTES de limpiar carrito para evitar redirección
       setSuccessModal({ isOpen: true, orderId: orderId });
+      
+      // Limpiar carrito después de mostrar el modal
+      clearCart();
       
     } catch (error) {
       console.error('Error en checkout:', error);
