@@ -61,14 +61,21 @@ export const orderService = {
   },
 
   // Actualización del estado de una orden existente
-  updateStatus: async (id, status) => {
+  updateStatus: async (id, newStatus) => {
     // Se obtiene la orden completa antes de actualizar
     const order = await orderService.getById(id);
-    // Actualización exclusiva del campo status
-    const response = await api.put(`/orders/${id}`, {
-      ...order,
-      status: status
-    });
+    
+    // Construir payload con solo los campos requeridos por el schema
+    const payload = {
+      date: order.date,
+      total: parseFloat(order.total),
+      delivery_method: order.delivery_method,
+      status: newStatus,
+      client_id: parseInt(order.client_id),
+      bill_id: parseInt(order.bill_id)
+    };
+    
+    const response = await api.put(`/orders/${id}`, payload);
     return response.data;
   }
 };
