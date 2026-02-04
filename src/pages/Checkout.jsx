@@ -595,16 +595,28 @@ const Checkout = () => {
                     <label className="text-xs text-text-secondary uppercase font-bold ml-1">Número de Tarjeta</label>
                     {/* Indicador de tipo de tarjeta */}
                     {cardType && cardData.number.length > 0 && (
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
+                      <span className={`text-xs font-bold px-2 py-1 rounded flex items-center gap-1.5 ${
                         cardType === 'visa' 
-                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                          ? 'bg-[#1a1f71]/10 border border-[#1a1f71]/30' 
                           : cardType === 'mastercard' 
-                            ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                            ? 'bg-[#eb001b]/10 border border-[#eb001b]/30'
                             : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
                       }`}>
-                        {cardType === 'visa' && '💳 Visa'}
-                        {cardType === 'mastercard' && '💳 Mastercard'}
-                        {cardType === 'unknown' && '❓ Desconocida'}
+                        {cardType === 'visa' && (
+                          <svg viewBox="0 0 48 16" className="h-4 w-auto">
+                            <path fill="#1a1f71" d="M19.5 1.5l-2.3 13h-2.9l2.3-13h2.9zm11.6 8.4l1.5-4.2.9 4.2h-2.4zm3.2 4.6h2.7l-2.4-13h-2.5c-.6 0-1 .3-1.2.8l-4.3 12.2h3l.6-1.7h3.7l.4 1.7zm-8.1-4.2c0-3.4-4.7-3.6-4.7-5.1 0-.5.5-.9 1.4-.9.8 0 1.7.1 2.5.5l.4-2.3c-.8-.3-1.6-.5-2.7-.5-2.8 0-4.8 1.5-4.8 3.7 0 1.6 1.4 2.5 2.5 3 1.1.6 1.5.9 1.5 1.5 0 .8-.9 1.2-1.7 1.2-1 0-2-.3-2.9-.7l-.4 2.3c.9.4 1.9.6 3.1.6 3 0 4.9-1.5 4.9-3.8l-.1.5zM12.3 1.5L7.8 14.5H4.6L2.4 3.9c-.1-.5-.3-.7-.7-.9C1 2.7.1 2.4-.9 2.1l.1-.6h4.8c.6 0 1.2.4 1.3 1.1l1.2 6.3 2.9-7.4h3z"/>
+                          </svg>
+                        )}
+                        {cardType === 'mastercard' && (
+                          <svg viewBox="0 0 48 30" className="h-4 w-auto">
+                            <circle fill="#eb001b" cx="15" cy="15" r="15"/>
+                            <circle fill="#f79e1b" cx="33" cy="15" r="15"/>
+                            <path fill="#ff5f00" d="M18 15c0-4.1 1.7-7.9 4.5-10.6C20.2 2.1 17.2 1 14 1 6.8 1 1 7.8 1 16s5.8 15 13 15c3.2 0 6.2-1.1 8.5-3.4C19.7 24.9 18 21.1 18 17v-2z"/>
+                          </svg>
+                        )}
+                        {cardType === 'unknown' && (
+                          <><CreditCard size={14} /> Desconocida</>
+                        )}
                       </span>
                     )}
                   </div>
