@@ -20,6 +20,7 @@ const Header = () => {
 
   const handleCartClick = (e) => {
     e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (isAuthenticated) {
       navigate('/cart');
     } else {
@@ -143,18 +144,30 @@ const Header = () => {
               {isAuthenticated ? (
                 <div className="flex items-center gap-4">
                   {isAdmin && (
-                     <Link to="/admin" className="text-sm font-bold text-primary bg-primary/10 px-4 py-2 rounded-lg hover:bg-primary hover:text-text-inverse transition-all shadow-sm shadow-primary/10 border border-primary/20">
+                     <Link 
+                       to="/admin" 
+                       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                       className="text-sm font-bold text-primary bg-primary/10 px-4 py-2 rounded-lg hover:bg-primary hover:text-text-inverse transition-all shadow-sm shadow-primary/10 border border-primary/20"
+                     >
                        Panel
                      </Link>
                   )}
-                  <Link to="/profile" className="flex items-center gap-2 hover:bg-surface p-1.5 pr-3 rounded-lg transition-colors group border border-transparent hover:border-ui-border">
+                  <Link 
+                    to="/profile" 
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="flex items-center gap-2 hover:bg-surface p-1.5 pr-3 rounded-lg transition-colors group border border-transparent hover:border-ui-border"
+                  >
                     <div className="w-9 h-9 bg-surface border border-ui-border rounded-full flex items-center justify-center text-sm font-bold text-primary group-hover:bg-primary group-hover:text-text-inverse transition-all shadow-sm">
                       {user?.name?.charAt(0).toUpperCase()}
                     </div>
                   </Link>
                 </div>
               ) : (
-                <Link to="/login" className="flex items-center gap-2 text-sm font-medium text-text-primary bg-surface hover:bg-primary/10 border border-ui-border px-4 py-2 rounded-lg transition-all hover:border-primary/30 hover:text-primary">
+                <Link 
+                  to="/login" 
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="flex items-center gap-2 text-sm font-medium text-text-primary bg-surface hover:bg-primary/10 border border-ui-border px-4 py-2 rounded-lg transition-all hover:border-primary/30 hover:text-primary"
+                >
                   <User size={18} />
                   <span>Ingresar</span>
                 </Link>
@@ -221,11 +234,19 @@ const Header = () => {
               {isAuthenticated ? (
                 <div className="space-y-3">
                   {isAdmin && (
-                    <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-3 bg-primary/10 text-primary font-bold rounded-xl border border-primary/20">
+                    <Link 
+                      to="/admin" 
+                      onClick={() => { setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                      className="block w-full text-center px-4 py-3 bg-primary/10 text-primary font-bold rounded-xl border border-primary/20"
+                    >
                       Panel de Administrador
                     </Link>
                   )}
-                  <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-text-primary hover:bg-background rounded-xl">
+                  <Link 
+                    to="/profile" 
+                    onClick={() => { setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                    className="flex items-center gap-3 px-4 py-3 text-text-primary hover:bg-background rounded-xl"
+                  >
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-black font-bold text-sm">
                       {user?.name?.charAt(0).toUpperCase()}
                     </div>
@@ -238,7 +259,7 @@ const Header = () => {
               ) : (
                 <Link 
                   to="/login" 
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' })}}
                   className="flex items-center justify-center gap-2 w-full bg-primary text-black font-bold py-3 rounded-xl shadow-lg shadow-primary/20"
                 >
                   <User size={20} /> Iniciar Sesión
