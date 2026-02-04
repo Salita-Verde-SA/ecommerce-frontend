@@ -29,16 +29,89 @@ const Checkout = () => {
   // Estado de datos de tarjeta de pago
   const [cardData, setCardData] = useState({ number: '', name: '', expiry: '', cvc: '' });
 
+  // Validación en tiempo real de la tarjeta
+  const getCardType = (number) => {
+    const digits = number.replace(/\s/g, '');
+    if (!digits) return null;
+    
+    // Visa: comienza con 4
+    if (/^4/.test(digits)) return 'visa';
+    
+    // Mastercard: comienza con 51-55 o 2221-2720
+    if (/^5[1-5]/.test(digits) || /^2(2[2-9][1-9]|2[3-9]\d|[3-6]\d{2}|7[01]\d|720)/.test(digits)) return 'mastercard';
+    
+    return 'unknown';
+  };
+
+  const validateExpiry = (expiry) => {
+    if (!expiry) return { isValid: null, message: '' };
+    
+    const parts = expiry.split('/');
+    const monthStr = parts[0] || '';
+    const yearStr = parts[1] || '';
+    
+    // Validar mes
+    if (monthStr.length >= 1) {
+      const monthNum = parseInt(monthStr, 10);
+      if (monthStr.length === 2 && (monthNum < 1 || monthNum > 12)) {
+        return { isValid: false, message: 'Mes inválido (01-12)' };
+      }
+      if (monthStr.length === 1 && monthNum > 1 && monthNum !== 0) {
+        // Si el primer dígito es > 1, no puede formar un mes válido excepto si es 0X
+      }
+    }
+    
+    // Si no hay año todavía
+    if (!yearStr) {
+      if (monthStr.length === 2) {
+        const monthNum = parseInt(monthStr, 10);
+        if (monthNum >= 1 && monthNum <= 12) {
+          return { isValid: null, message: 'Ingresa el año' };
+        }
+      }
+      return { isValid: null, message: '' };
+    }
+    
+    // Validar año completo
+    if (yearStr.length === 2) {
+      const month = parseInt(monthStr, 10);
+      const year = 2000 + parseInt(yearStr, 10);
+      
+      if (month < 1 || month > 12) {
+        return { isValid: false, message: 'Mes inválido (01-12)' };
+      }
+      
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      
+      if (year < currentYear) {
+        return { isValid: false, message: 'Tarjeta vencida' };
+      }
+      
+      if (year === currentYear && month < currentMonth) {
+        return { isValid: false, message: 'Tarjeta vencida' };
+      }
+      
+      return { isValid: true, message: `Válida hasta ${monthStr}/${yearStr}` };
+    }
+    
+    return { isValid: null, message: '' };
+  };
+
+  const cardType = getCardType(cardData.number);
+  const expiryValidation = validateExpiry(cardData.expiry);
+
   // Estado de interfaz de usuario
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [successModal, setSuccessModal] = useState({ isOpen: false, orderId: null });
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info', onCloseAction: null });
 
   // Verificación de autenticación y contenido del carrito
   useEffect(() => {
     if (!isAuthenticated) navigate('/login');
-    if (cart.length === 0 && !success) navigate('/');
-  }, [isAuthenticated, cart, navigate, success]);
+    if (cart.length === 0 && !successModal.isOpen) navigate('/');
+  }, [isAuthenticated, cart, navigate, successModal.isOpen]);
 
   // Carga de direcciones del usuario autenticado
   useEffect(() => {
@@ -305,13 +378,8 @@ const Checkout = () => {
       
       clearCart();
       
-      // Presentación del modal de éxito - al cerrar se muestra la pantalla de confirmación
-      showAlert(
-        'success', 
-        '¡Compra Exitosa!', 
-        `Tu pedido #${orderId} ha sido procesado correctamente. Recibirás un correo con los detalles del envío.`,
-        () => setSuccess(true)  // Esta función se ejecutará al cerrar el modal
-      );
+      // Mostrar modal de éxito de compra
+      setSuccessModal({ isOpen: true, orderId: orderId });
       
     } catch (error) {
       console.error('Error en checkout:', error);
@@ -336,24 +404,70 @@ const Checkout = () => {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-center">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mb-6 text-primary border border-primary/50 shadow-[0_0_30px_rgba(204,255,0,0.3)]">
-          <CheckCircle size={48} />
-        </motion.div>
-        <h2 className="text-3xl font-bold text-text-primary mb-2">¡Pago Exitoso!</h2>
-        <p className="text-text-secondary mb-8 max-w-md">Tu orden ha sido procesada y se está preparando para el envío.</p>
-        <div className="flex gap-4">
-          <button onClick={() => navigate('/profile')} className="bg-surface border border-ui-border hover:border-primary text-text-primary px-6 py-3 rounded-xl font-bold transition-all">Ver Pedidos</button>
-          <button onClick={() => navigate('/')} className="bg-primary hover:bg-primary-hover text-black px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">Seguir Comprando</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
+    <>
+      {/* MODAL DE COMPRA EXITOSA */}
+      <AnimatePresence>
+        {successModal.isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-surface rounded-3xl p-8 max-w-md w-full text-center border border-ui-border shadow-2xl relative overflow-hidden"
+            >
+              {/* Línea decorativa superior */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20"></div>
+              
+              {/* Icono de éxito */}
+              <motion.div 
+                initial={{ scale: 0 }} 
+                animate={{ scale: 1 }} 
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 text-primary border border-primary/50 shadow-[0_0_30px_rgba(204,255,0,0.3)]"
+              >
+                <CheckCircle size={40} />
+              </motion.div>
+              
+              <h2 className="text-2xl font-bold text-text-primary mb-2">¡Compra Exitosa!</h2>
+              <p className="text-text-secondary mb-2">Tu pedido ha sido procesado correctamente.</p>
+              
+              {/* Número de orden */}
+              <div className="bg-background rounded-xl p-4 mb-6 border border-ui-border">
+                <span className="text-xs text-text-muted uppercase tracking-wider block mb-1">Número de Pedido</span>
+                <span className="text-2xl font-bold text-primary font-mono">#{successModal.orderId}</span>
+              </div>
+              
+              <p className="text-sm text-text-muted mb-6">
+                Recibirás un correo electrónico con los detalles del envío.
+              </p>
+              
+              {/* Botones de acción */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={() => { setSuccessModal({ isOpen: false, orderId: null }); navigate('/profile'); }}
+                  className="flex-1 bg-surface border border-ui-border hover:border-primary text-text-primary px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  Ver Mis Pedidos
+                </button>
+                <button 
+                  onClick={() => { setSuccessModal({ isOpen: false, orderId: null }); navigate('/'); }}
+                  className="flex-1 bg-primary hover:bg-primary-hover text-black px-5 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                >
+                  Seguir Comprando
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <Link to="/cart" className="inline-flex items-center text-text-secondary hover:text-primary transition-colors text-sm font-medium group">
@@ -469,7 +583,23 @@ const Checkout = () => {
               </h3>
               <div className="space-y-5 max-w-lg">
                 <div className="relative group">
-                  <label className="text-xs text-text-secondary uppercase font-bold ml-1 mb-1 block">Número de Tarjeta</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs text-text-secondary uppercase font-bold ml-1">Número de Tarjeta</label>
+                    {/* Indicador de tipo de tarjeta */}
+                    {cardType && cardData.number.length > 0 && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
+                        cardType === 'visa' 
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                          : cardType === 'mastercard' 
+                            ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                            : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                      }`}>
+                        {cardType === 'visa' && '💳 Visa'}
+                        {cardType === 'mastercard' && '💳 Mastercard'}
+                        {cardType === 'unknown' && '❓ Desconocida'}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-3.5 text-text-muted group-focus-within:text-primary transition-colors" size={18} />
                     <input name="number" value={cardData.number} onChange={handleCardChange} maxLength="19" className="w-full pl-10 p-3 bg-background border border-ui-border rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono tracking-wide transition-all" placeholder="0000 0000 0000 0000" />
@@ -486,8 +616,35 @@ const Checkout = () => {
                     <label className="text-xs text-text-secondary uppercase font-bold ml-1 mb-1 block">Vencimiento</label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-3.5 text-text-muted group-focus-within:text-primary transition-colors" size={18} />
-                      <input name="expiry" value={cardData.expiry} onChange={handleCardChange} maxLength="5" className="w-full pl-10 p-3 bg-background border border-ui-border rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="MM/YY" />
+                      <input 
+                        name="expiry" 
+                        value={cardData.expiry} 
+                        onChange={handleCardChange} 
+                        maxLength="5" 
+                        className={`w-full pl-10 p-3 bg-background border rounded-xl text-sm outline-none transition-all ${
+                          expiryValidation.isValid === false 
+                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                            : expiryValidation.isValid === true 
+                              ? 'border-green-500 focus:border-green-500 focus:ring-1 focus:ring-green-500'
+                              : 'border-ui-border focus:border-primary focus:ring-1 focus:ring-primary'
+                        }`} 
+                        placeholder="MM/YY" 
+                      />
                     </div>
+                    {/* Mensaje de validación de fecha */}
+                    {cardData.expiry && expiryValidation.message && (
+                      <p className={`text-xs mt-1 ml-1 flex items-center gap-1 ${
+                        expiryValidation.isValid === false 
+                          ? 'text-red-400' 
+                          : expiryValidation.isValid === true 
+                            ? 'text-green-400'
+                            : 'text-text-muted'
+                      }`}>
+                        {expiryValidation.isValid === false && <AlertCircle size={12} />}
+                        {expiryValidation.isValid === true && <CheckCircle size={12} />}
+                        {expiryValidation.message}
+                      </p>
+                    )}
                   </div>
                   <div className="relative group">
                     <label className="text-xs text-text-secondary uppercase font-bold ml-1 mb-1 block">Código de Seguridad</label>
@@ -560,7 +717,8 @@ const Checkout = () => {
         message={alertModal.message} 
         type={alertModal.type} 
       />
-    </div>
+      </div>
+    </>
   );
 };
 
