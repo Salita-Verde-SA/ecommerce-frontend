@@ -1,10 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
 import { billService } from '../services/billService';
 import { clientService } from '../services/clientService';
-import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle, Edit2, Save, X } from 'lucide-react';
+import { User, Package, MapPin, LogOut, Clock, CheckCircle, Truck, Trash2, Plus, FileText, AlertCircle, Edit2, Save, X, XCircle } from 'lucide-react';
+
+// Validación de teléfono según backend: ^\+?[1-9]\d{6,19}$
+// - min_length: 7, max_length: 20
+// - Puede empezar opcionalmente con +
+// - El primer dígito numérico debe ser 1-9 (NO puede empezar con 0)
+// - Total: 7-20 dígitos (sin contar el +)
+const validatePhone = (phone) => {
+  if (!phone) return { isValid: true, message: '' }; // Teléfono es opcional
+  
+  // Remover el + para validar los dígitos
+  const hasPlus = phone.startsWith('+');
+  const digits = hasPlus ? phone.slice(1) : phone;
+  
+  // Verificar que después del + solo haya números
+  if (!/^\d*$/.test(digits)) {
+    return { isValid: false, message: 'Use solo números (puede incluir + al inicio)' };
+  }
+  
+  // Si solo tiene el +, pedir que ingrese números
+  if (hasPlus && digits.length === 0) {
+    return { isValid: false, message: 'Ingrese los dígitos después del +' };
+  }
+  
+  // El primer dígito no puede ser 0
+  if (digits.length > 0 && digits.startsWith('0')) {
+    return { isValid: false, message: 'El número no debe empezar con 0' };
+  }
+  
+  if (digits.length < 7) {
+    return { isValid: false, message: `Mínimo 7 dígitos (faltan ${7 - digits.length})` };
+  }
+  
+  if (digits.length > 20) {
+    return { isValid: false, message: 'Máximo 20 dígitos' };
+  }
+  
+  return { isValid: true, message: '' };
+};
+
+const getPhoneSuggestions = (phone) => {
+  if (!phone) return [];
+  
+  const suggestions = [];
+  const hasPlus = phone.startsWith('+');
+  const digits = hasPlus ? phone.slice(1) : phone;
+  
+  // Advertencia si el primer dígito es 0
+  if (digits.length > 0 && digits.startsWith('0')) {
+    suggestions.push({ text: 'El primer dígito no puede ser 0', type: 'warning' });
+    return suggestions;
+  }
+  
+  // Mostrar progreso de longitud
+  if (digits.length > 0 && digits.length < 7) {
+    suggestions.push({ text: `Mínimo 7 dígitos (faltan ${7 - digits.length})`, type: 'info' });
+  } else if (digits.length >= 7 && digits.length <= 20) {
+    suggestions.push({ text: '✓ Formato válido', type: 'success' });
+  }
+  
+  return suggestions;
+};
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AddressForm from '../components/admin/AddressForm';
@@ -31,6 +92,11 @@ const Profile = () => {
     telephone: ''
   });
   const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  // Validación del teléfono en tiempo real
+  const phoneValidation = useMemo(() => validatePhone(editForm.telephone), [editForm.telephone]);
+  const phoneSuggestions = useMemo(() => getPhoneSuggestions(editForm.telephone), [editForm.telephone]);
 
   // Estado de los modales del componente
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -102,6 +168,7 @@ const Profile = () => {
         email: user.email || '',
         telephone: user.telephone || ''
       });
+      setPhoneTouched(false);
     }
     setIsEditing(!isEditing);
   };
@@ -114,6 +181,12 @@ const Profile = () => {
       return;
     }
 
+    // Validación del número de teléfono antes del envío
+    if (editForm.telephone && !phoneValidation.isValid) {
+      showAlert('warning', 'Teléfono inválido', phoneValidation.message);
+      return;
+    }
+
     setUpdatingProfile(true);
     try {
       // Se envían exclusivamente los campos editables
@@ -122,7 +195,7 @@ const Profile = () => {
         name: editForm.name,
         lastname: editForm.lastname,
         email: editForm.email,
-        telephone: editForm.telephone
+        telephone: editForm.telephone || undefined
       };
 
       // El identificador se envía en la URL, el payload limpio en el body
@@ -138,10 +211,30 @@ const Profile = () => {
       });
 
       setIsEditing(false);
+      setPhoneTouched(false);
       showAlert('success', 'Perfil Actualizado', 'Tus datos han sido modificados correctamente.');
     } catch (err) {
       console.error(err);
-      const errorMsg = err.response?.data?.detail || 'No se pudieron actualizar los datos. Verifica el email o intenta más tarde.';
+      
+      // Manejo seguro del error para evitar renderizar objetos
+      let errorMsg = 'No se pudieron actualizar los datos. Verifica el email o intenta más tarde.';
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          // Formateo de errores de validación de Pydantic
+          errorMsg = detail.map(e => {
+            const field = e.loc?.slice(-1)[0] || 'campo';
+            return `${field}: ${e.msg}`;
+          }).join(' | ');
+        } else if (typeof detail === 'object') {
+          // Si es un objeto con msg, usar ese mensaje
+          errorMsg = detail.msg || JSON.stringify(detail);
+        }
+      }
+      
       showAlert('error', 'Error', errorMsg);
     } finally {
       setUpdatingProfile(false);
@@ -149,10 +242,25 @@ const Profile = () => {
   };
 
   const handleInputChange = (e) => {
-    setEditForm({
-      ...editForm,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    // Campo de teléfono: se permite + al inicio y luego solo números
+    if (name === 'telephone') {
+      // Permitir + solo al inicio, luego solo dígitos
+      let sanitized = '';
+      for (let i = 0; i < value.length; i++) {
+        const char = value[i];
+        if (i === 0 && char === '+') {
+          sanitized += char;
+        } else if (/\d/.test(char)) {
+          sanitized += char;
+        }
+      }
+      setEditForm({ ...editForm, [name]: sanitized });
+      setPhoneTouched(true);
+    } else {
+      setEditForm({ ...editForm, [name]: value });
+    }
   };
 
   // --- LÓGICA DE DIRECCIONES ---
@@ -428,17 +536,17 @@ const Profile = () => {
                       </button>
                     </div>
                     {addresses.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {addresses.map(addr => (
                           <div key={addr.id || addr.id_key} className="bg-surface p-5 rounded-xl border border-ui-border relative group">
                             <div className="flex items-start gap-3">
-                              <MapPin className="text-primary mt-1" size={20} />
-                              <div>
-                                <p className="font-bold text-text-primary">{addr.street} {addr.number}</p>
-                                <p className="text-sm text-text-secondary">{addr.city}</p>
+                              <MapPin className="text-primary mt-1 shrink-0" size={20} />
+                              <div className="min-w-0">
+                                <p className="font-bold text-text-primary break-words">{addr.street} {addr.number}</p>
+                                <p className="text-sm text-text-secondary break-words">{addr.city}</p>
                               </div>
                             </div>
-                            <button onClick={() => handleDeleteAddress(addr)} className="absolute top-4 right-4 text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleDeleteAddress(addr)} className="absolute top-4 right-4 text-red-400 hover:text-red-300 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -515,13 +623,69 @@ const Profile = () => {
                         </div>
                         <div>
                           <label className="text-sm text-text-secondary block mb-1">Teléfono</label>
-                          <input 
-                            name="telephone"
-                            value={isEditing ? editForm.telephone : (user?.telephone || '')} 
-                            onChange={handleInputChange}
-                            disabled={!isEditing || updatingProfile}
-                            className={`w-full p-3 rounded-xl border transition-all ${isEditing ? 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary' : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'}`} 
-                          />
+                          <div className="relative">
+                            <input 
+                              name="telephone"
+                              value={isEditing ? editForm.telephone : (user?.telephone || '')} 
+                              onChange={handleInputChange}
+                              disabled={!isEditing || updatingProfile}
+                              placeholder="+1234567890"
+                              className={`w-full p-3 rounded-xl border transition-all ${
+                                isEditing 
+                                  ? phoneTouched && editForm.telephone && !phoneValidation.isValid
+                                    ? 'bg-background border-red-500 text-text-primary focus:ring-1 focus:ring-red-500'
+                                    : phoneTouched && editForm.telephone && phoneValidation.isValid
+                                      ? 'bg-background border-green-500 text-text-primary focus:ring-1 focus:ring-green-500'
+                                      : 'bg-background border-primary/50 text-text-primary focus:ring-1 focus:ring-primary'
+                                  : 'bg-surface border-ui-border text-text-secondary cursor-not-allowed'
+                              }`} 
+                            />
+                            {/* Icono de validación */}
+                            {isEditing && phoneTouched && editForm.telephone && (
+                              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                {phoneValidation.isValid ? (
+                                  <CheckCircle size={18} className="text-green-500" />
+                                ) : (
+                                  <XCircle size={18} className="text-red-500" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Sugerencias y validación del teléfono */}
+                          {isEditing && phoneTouched && (
+                            <div className="space-y-1 mt-1">
+                              {/* Error de validación */}
+                              {!phoneValidation.isValid && editForm.telephone && (
+                                <p className="text-xs text-red-400 flex items-center gap-1">
+                                  <XCircle size={12} />
+                                  {phoneValidation.message}
+                                </p>
+                              )}
+                              
+                              {/* Sugerencias contextuales */}
+                              {phoneSuggestions.map((suggestion, index) => (
+                                <p 
+                                  key={index} 
+                                  className={`text-xs flex items-center gap-1 ${
+                                    suggestion.type === 'success' ? 'text-green-400' :
+                                    suggestion.type === 'warning' ? 'text-yellow-400' :
+                                    'text-text-secondary'
+                                  }`}
+                                >
+                                  {suggestion.type === 'success' && <CheckCircle size={12} />}
+                                  {suggestion.text}
+                                </p>
+                              ))}
+                              
+                              {/* Formato esperado */}
+                              {editForm.telephone.length === 0 && (
+                                <p className="text-xs text-text-muted">
+                                  7-20 dígitos, puede incluir + al inicio
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -529,8 +693,8 @@ const Profile = () => {
                         <div className="flex justify-end pt-4 border-t border-ui-border mt-4">
                           <button 
                             type="submit"
-                            disabled={updatingProfile}
-                            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-black font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-70"
+                            disabled={updatingProfile || (editForm.telephone && !phoneValidation.isValid)}
+                            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-black font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                           >
                             {updatingProfile ? (
                               <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>

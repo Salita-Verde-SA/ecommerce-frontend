@@ -96,8 +96,8 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="col-span-2 relative group">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+              <div className="col-span-1 md:col-span-2 relative group">
                 <label className={labelClasses}>Nombre del Producto</label>
                 <Box size={18} className={iconClasses} />
                 <input 
@@ -109,7 +109,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
                 />
               </div>
               
-              <div className="relative group">
+              <div className="col-span-1 relative group">
                 <label className={labelClasses}>Precio (USD)</label>
                 <DollarSign size={18} className={iconClasses} />
                 <input 
@@ -124,7 +124,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
                 />
               </div>
               
-              <div className="relative group">
+              <div className="col-span-1 relative group">
                 <label className={labelClasses}>Stock Disponible</label>
                 <Layers size={18} className={iconClasses} />
                 <input 
@@ -138,7 +138,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData = null, categories
                 />
               </div>
               
-              <div className="col-span-2 relative group">
+              <div className="col-span-1 md:col-span-2 relative group">
                 <label className={labelClasses}>Categoría</label>
                 <Tag size={18} className={iconClasses} />
                 <select 

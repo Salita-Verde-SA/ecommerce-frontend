@@ -7,29 +7,39 @@ import { clientService } from '../services/clientService';
 
 // Validación de teléfono según backend: ^\+?[1-9]\d{6,19}$
 // - min_length: 7, max_length: 20
-// - Debe empezar con dígito 1-9 (NO con 0)
-// - Solo números
-const PHONE_REGEX = /^[1-9]\d{6,19}$/;
+// - Puede empezar opcionalmente con +
+// - El primer dígito numérico debe ser 1-9 (NO puede empezar con 0)
+// - Total: 7-20 dígitos (sin contar el +)
+const PHONE_REGEX = /^\+?[1-9]\d{6,19}$/;
 
 const validatePhone = (phone) => {
   if (!phone) return { isValid: true, message: '' }; // Teléfono es opcional
   
-  // Verificar que solo contenga números
-  if (!/^\d+$/.test(phone)) {
-    return { isValid: false, message: 'Use solo números, sin espacios ni guiones' };
+  // Remover el + para validar los dígitos
+  const hasPlus = phone.startsWith('+');
+  const digits = hasPlus ? phone.slice(1) : phone;
+  
+  // Verificar que después del + solo haya números
+  if (!/^\d*$/.test(digits)) {
+    return { isValid: false, message: 'Use solo números (puede incluir + al inicio)' };
   }
   
-  // No puede empezar con 0
-  if (phone.startsWith('0')) {
+  // Si solo tiene el +, pedir que ingrese números
+  if (hasPlus && digits.length === 0) {
+    return { isValid: false, message: 'Ingrese los dígitos después del +' };
+  }
+  
+  // El primer dígito no puede ser 0
+  if (digits.length > 0 && digits.startsWith('0')) {
     return { isValid: false, message: 'El número no debe empezar con 0' };
   }
   
-  if (phone.length < 7) {
-    return { isValid: false, message: 'El número debe tener al menos 7 dígitos' };
+  if (digits.length < 7) {
+    return { isValid: false, message: `Mínimo 7 dígitos (faltan ${7 - digits.length})` };
   }
   
-  if (phone.length > 20) {
-    return { isValid: false, message: 'El número no puede tener más de 20 dígitos' };
+  if (digits.length > 20) {
+    return { isValid: false, message: 'Máximo 20 dígitos' };
   }
   
   return { isValid: true, message: '' };
@@ -39,22 +49,20 @@ const getPhoneSuggestions = (phone) => {
   if (!phone) return [];
   
   const suggestions = [];
+  const hasPlus = phone.startsWith('+');
+  const digits = hasPlus ? phone.slice(1) : phone;
   
-  // Advertencia si empieza con 0
-  if (phone.startsWith('0')) {
-    suggestions.push({ text: 'No incluya el 0 inicial', type: 'warning' });
+  // Advertencia si el primer dígito es 0
+  if (digits.length > 0 && digits.startsWith('0')) {
+    suggestions.push({ text: 'El primer dígito no puede ser 0', type: 'warning' });
     return suggestions;
   }
   
-  // Sugerencias basadas en lo que está escribiendo
-  if (phone.startsWith('261')) {
-    suggestions.push({ text: '✓ Código de área de Mendoza', type: 'success' });
-  }
-  
-  if (phone.length < 7) {
-    suggestions.push({ text: `Mínimo 7 dígitos (faltan ${7 - phone.length})`, type: 'info' });
-  } else if (phone.length >= 7 && phone.length <= 20) {
-    suggestions.push({ text: '✓ Longitud válida', type: 'success' });
+  // Mostrar progreso de longitud
+  if (digits.length > 0 && digits.length < 7) {
+    suggestions.push({ text: `Mínimo 7 dígitos (faltan ${7 - digits.length})`, type: 'info' });
+  } else if (digits.length >= 7 && digits.length <= 20) {
+    suggestions.push({ text: '✓ Formato válido', type: 'success' });
   }
   
   return suggestions;
@@ -80,10 +88,18 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Campo de teléfono: se permite solo entrada numérica
+    // Campo de teléfono: se permite + al inicio y luego solo números
     if (name === 'telephone') {
-      // Eliminación de caracteres no numéricos
-      const sanitized = value.replace(/[^0-9]/g, '');
+      // Permitir + solo al inicio, luego solo dígitos
+      let sanitized = '';
+      for (let i = 0; i < value.length; i++) {
+        const char = value[i];
+        if (i === 0 && char === '+') {
+          sanitized += char;
+        } else if (/\d/.test(char)) {
+          sanitized += char;
+        }
+      }
       setFormData({...formData, [name]: sanitized});
       setPhoneTouched(true);
     } else {
@@ -209,7 +225,7 @@ const Login = () => {
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           {!isLogin && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="relative">
                   <div className={iconClass}><User size={18} /></div>
                   <input 
@@ -246,7 +262,7 @@ const Login = () => {
                         ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
                         : ''
                   }`}
-                  placeholder="2615551234" 
+                  placeholder="+1234567890" 
                 />
                 {/* Icono de validación */}
                 {phoneTouched && formData.telephone && (
@@ -289,7 +305,7 @@ const Login = () => {
                   {/* Formato esperado */}
                   {formData.telephone.length === 0 && (
                     <p className="text-xs text-text-muted">
-                      Ej: 2615551234 (código de área + número, sin espacios)
+                      7-20 dígitos, puede incluir + al inicio
                     </p>
                   )}
                 </div>

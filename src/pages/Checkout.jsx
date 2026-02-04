@@ -481,7 +481,7 @@ const Checkout = () => {
                    <input name="name" value={cardData.name} onChange={handleCardChange} className="w-full p-3 bg-background border border-ui-border rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Como figura en el plástico" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="relative group">
                     <label className="text-xs text-text-secondary uppercase font-bold ml-1 mb-1 block">Vencimiento</label>
                     <div className="relative">
