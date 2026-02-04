@@ -5,6 +5,8 @@ import { categoryService } from '../services/categoryService';
 import { healthService } from '../services/healthService';
 import { orderService } from '../services/orderService';
 import { orderDetailService } from '../services/orderDetailService';
+import { clientService } from '../services/clientService';
+import { addressService } from '../services/addressService';
 import ProductForm from '../components/admin/ProductForm';
 import CategoryForm from '../components/admin/CategoryForm';
 import LatencyChart from '../components/admin/LatencyChart';
@@ -58,6 +60,8 @@ const AdminDashboard = () => {
   // Estado del modal de detalle de orden
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
+  const [orderClient, setOrderClient] = useState(null);
+  const [orderAddress, setOrderAddress] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -238,11 +242,24 @@ const AdminDashboard = () => {
     // Asegurar que el objeto tenga un id normalizado
     const normalizedOrder = { ...o, id: o.id_key || o.id };
     setSelectedOrder(normalizedOrder); 
-    setLoadingDetails(true); 
+    setLoadingDetails(true);
+    setOrderClient(null);
+    setOrderAddress(null);
+    
     try { 
       const orderId = normalizedOrder.id;
-      const d = await orderDetailService.getByOrderId(orderId); 
-      setOrderDetails(d); 
+      
+      // Cargar detalles, cliente y dirección en paralelo
+      const [details, client, addresses] = await Promise.all([
+        orderDetailService.getByOrderId(orderId),
+        clientService.getById(normalizedOrder.client_id).catch(() => null),
+        addressService.getMyAddresses(normalizedOrder.client_id).catch(() => [])
+      ]);
+      
+      setOrderDetails(details);
+      setOrderClient(client);
+      // Usar la primera dirección del cliente (si existe)
+      setOrderAddress(addresses.length > 0 ? addresses[0] : null);
     } catch(e) { 
       console.error(e);
       setOrderDetails([]);
@@ -566,14 +583,25 @@ const AdminDashboard = () => {
                       </span>
                     </div>
                     <div className="bg-background rounded-xl p-3 border border-ui-border">
-                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Cliente ID</span>
-                      <span className="text-sm text-text-primary font-medium font-mono">#{selectedOrder.client_id}</span>
+                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Cliente</span>
+                      <span className="text-sm text-text-primary font-medium">
+                        {orderClient ? `${orderClient.name} ${orderClient.lastname}` : 'Cargando...'}
+                      </span>
                     </div>
-                    <div className="bg-background rounded-xl p-3 border border-ui-border col-span-2">
+                    <div className="bg-background rounded-xl p-3 border border-ui-border">
                       <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Método de Entrega</span>
                       <span className="text-sm text-text-primary font-medium flex items-center gap-2">
                         <span>{getDeliveryText(selectedOrder.delivery_method).icon}</span>
                         {getDeliveryText(selectedOrder.delivery_method).label}
+                      </span>
+                    </div>
+                    <div className="bg-background rounded-xl p-3 border border-ui-border">
+                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Dirección de Envío</span>
+                      <span className="text-sm text-text-primary font-medium">
+                        {orderAddress 
+                          ? `${orderAddress.street} ${orderAddress.number}, ${orderAddress.city}`
+                          : (selectedOrder.delivery_method === 1 ? 'Retiro en tienda' : 'Sin dirección')
+                        }
                       </span>
                     </div>
                   </div>
