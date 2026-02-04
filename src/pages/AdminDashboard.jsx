@@ -59,6 +59,7 @@ const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const showAlert = (type, title, message) => {
     setAlertModal({ isOpen: true, type, title, message });
@@ -242,6 +243,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    if (selectedOrder?.status === newStatus) return; // Sin cambios
+    
+    setUpdatingStatus(true);
+    try {
+      await orderService.updateStatus(orderId, newStatus);
+      // Actualizar estado local
+      setSelectedOrder({ ...selectedOrder, status: newStatus });
+      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      showAlert('success', 'Estado Actualizado', `El pedido #${orderId} ahora está "${STATUS_MAP[newStatus]}".`);
+    } catch (e) {
+      console.error('Error actualizando estado:', e);
+      showAlert('error', 'Error', 'No se pudo actualizar el estado del pedido.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const handleToggleMonitoring = () => {
     if (isMonitoring) {
       stopMonitoring();
@@ -284,6 +303,18 @@ const AdminDashboard = () => {
     2: 'En Progreso',
     3: 'Entregado',
     4: 'Cancelado'
+  };
+
+  // Mapeo de métodos de entrega
+  const DELIVERY_MAP = {
+    1: { label: 'Drive Thru', icon: '🚗' },
+    2: { label: 'Retiro en Tienda', icon: '🏪' },
+    3: { label: 'Envío a Domicilio', icon: '🚚' }
+  };
+
+  const getDeliveryText = (method) => {
+    const numMethod = typeof method === 'number' ? method : parseInt(method, 10);
+    return DELIVERY_MAP[numMethod] || { label: 'Desconocido', icon: '📦' };
   };
 
   const getStatusText = (status) => {
@@ -496,27 +527,107 @@ const AdminDashboard = () => {
         <AnimatePresence>
           {selectedOrder && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div className="flex justify-between items-center p-6 border-b border-ui-border">
-                  <h3 className="text-xl font-bold text-text-primary">Orden #{selectedOrder.id}</h3>
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-surface border border-ui-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center p-6 border-b border-ui-border shrink-0">
+                  <div>
+                    <h3 className="text-xl font-bold text-text-primary">Orden #{selectedOrder.id}</h3>
+                    <p className="text-xs text-text-muted mt-1">Factura #{selectedOrder.bill_id}</p>
+                  </div>
                   <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-background rounded-full text-text-secondary hover:text-text-primary"><X size={20}/></button>
                 </div>
-                <div className="p-6">
-                  {loadingDetails ? (
-                    <p className="text-center text-text-secondary">Cargando...</p> 
-                  ) : (
-                    <ul className="space-y-3">
-                      {orderDetails.map((item, idx) => (
-                        <li key={idx} className="flex justify-between text-sm p-3 bg-background rounded-lg border border-ui-border text-text-primary">
-                          <span>{item.quantity}x {item.product_name}</span>
-                          <span className="font-bold text-primary">${item.subtotal?.toFixed(2)}</span>
-                        </li>
-                      ))}
-                      {orderDetails.length === 0 && <li className="text-center text-text-muted">Sin detalles</li>}
-                    </ul>
-                  )}
-                  <div className="mt-6 flex justify-end pt-4 border-t border-ui-border">
-                    <p className="text-lg font-bold text-text-primary">Total: <span className="text-primary">${parseFloat(selectedOrder.total).toFixed(2)}</span></p>
+                <div className="p-6 overflow-y-auto">
+                  {/* Información general del pedido */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-background rounded-xl p-3 border border-ui-border">
+                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Fecha</span>
+                      <span className="text-sm text-text-primary font-medium">
+                        {selectedOrder.date ? new Date(selectedOrder.date).toLocaleDateString('es-AR', { 
+                          day: '2-digit', 
+                          month: 'short', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Sin fecha'}
+                      </span>
+                    </div>
+                    <div className="bg-background rounded-xl p-3 border border-ui-border">
+                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Cliente ID</span>
+                      <span className="text-sm text-text-primary font-medium font-mono">#{selectedOrder.client_id}</span>
+                    </div>
+                    <div className="bg-background rounded-xl p-3 border border-ui-border col-span-2">
+                      <span className="text-[10px] text-text-muted uppercase font-bold block mb-1">Método de Entrega</span>
+                      <span className="text-sm text-text-primary font-medium flex items-center gap-2">
+                        <span>{getDeliveryText(selectedOrder.delivery_method).icon}</span>
+                        {getDeliveryText(selectedOrder.delivery_method).label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Selector de estado */}
+                  <div className="mb-6 p-4 bg-background rounded-xl border border-ui-border">
+                    <label className="block text-xs text-text-secondary uppercase font-bold mb-2">Estado del Pedido</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {Object.entries(STATUS_MAP).map(([value, label]) => {
+                        const numValue = parseInt(value);
+                        const isSelected = selectedOrder.status === numValue;
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => handleUpdateOrderStatus(selectedOrder.id, numValue)}
+                            disabled={updatingStatus}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                              isSelected
+                                ? getStatusStyle(numValue)
+                                : 'bg-surface border-ui-border text-text-secondary hover:border-primary/50'
+                            } ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Productos del pedido */}
+                  <div className="mb-4">
+                    <label className="block text-xs text-text-secondary uppercase font-bold mb-2">
+                      Productos ({orderDetails.length})
+                    </label>
+                    {loadingDetails ? (
+                      <p className="text-center text-text-secondary py-4">Cargando...</p> 
+                    ) : (
+                      <ul className="space-y-2">
+                        {orderDetails.map((item, idx) => (
+                          <li key={idx} className="flex justify-between items-center text-sm p-3 bg-background rounded-lg border border-ui-border">
+                            <div className="flex items-center gap-3">
+                              <span className="bg-primary/10 text-primary font-bold text-xs w-6 h-6 rounded flex items-center justify-center">{item.quantity}</span>
+                              <div>
+                                <span className="text-text-primary font-medium block">{item.product_name}</span>
+                                {item.unit_price && (
+                                  <span className="text-xs text-text-muted">${item.unit_price?.toFixed(2)} c/u</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-bold text-primary">${item.subtotal?.toFixed(2)}</span>
+                          </li>
+                        ))}
+                        {orderDetails.length === 0 && (
+                          <li className="text-center text-text-muted py-4 bg-background rounded-lg border border-ui-border">Sin productos</li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Resumen del total */}
+                  <div className="mt-6 pt-4 border-t border-ui-border space-y-2">
+                    <div className="flex justify-between text-sm text-text-secondary">
+                      <span>Subtotal ({orderDetails.reduce((acc, i) => acc + i.quantity, 0)} items)</span>
+                      <span className="font-mono">${orderDetails.reduce((acc, i) => acc + (i.subtotal || 0), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold">
+                      <span className="text-text-primary">Total</span>
+                      <span className="text-primary">${parseFloat(selectedOrder.total).toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
