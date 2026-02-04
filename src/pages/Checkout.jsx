@@ -16,7 +16,7 @@ const Checkout = () => {
   const navigate = useNavigate();
 
   const totalPrice = getTotalPrice();
-  const shippingCost = totalPrice > 500 ? 0 : 25;
+  const shippingCost = totalPrice > 20 ? 0 : 5;
   const finalTotal = totalPrice + shippingCost;
 
   // Estado de direcciones de envío
