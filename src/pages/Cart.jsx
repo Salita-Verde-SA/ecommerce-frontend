@@ -150,8 +150,8 @@ const Cart = () => {
 
           {/* Panel de resumen del pedido */}
           <div className="lg:col-span-1">
-            <div className="bg-surface rounded-2xl border border-ui-border p-6 sticky top-24 shadow-xl shadow-black/5">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20 rounded-t-2xl"></div>
+            <div className="bg-surface rounded-2xl border border-ui-border p-6 sticky top-24 shadow-xl shadow-black/5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20"></div>
               
               <h2 className="text-xl font-bold text-text-primary mb-6">Resumen del Pedido</h2>
 
@@ -170,7 +170,7 @@ const Cart = () => {
                 </div>
                 {shippingCost > 0 && (
                   <p className="text-xs text-text-muted bg-background p-3 rounded-lg border border-ui-border">
-                    💡 Agrega ${(500 - totalPrice).toFixed(2)} más para obtener envío gratis
+                    💡 Agrega ${(20 - totalPrice).toFixed(2)} más para obtener envío gratis
                   </p>
                 )}
               </div>
