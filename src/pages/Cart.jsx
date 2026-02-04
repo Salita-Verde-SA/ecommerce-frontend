@@ -11,7 +11,7 @@ const Cart = () => {
   const navigate = useNavigate();
 
   const totalPrice = getTotalPrice();
-  const shippingCost = totalPrice > 20 ? 0 : 5;
+  const shippingCost = totalPrice >= 20 ? 0 : 5;
   const finalTotal = totalPrice + shippingCost;
 
   const handleCheckout = () => {
