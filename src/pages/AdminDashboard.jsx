@@ -92,7 +92,12 @@ const AdminDashboard = () => {
   const loadOrders = async () => {
     try {
       const ordersData = await orderService.getAll();
-      setOrders(ordersData);
+      // Normalizar los datos para usar 'id' consistentemente
+      const normalizedOrders = ordersData.map(order => ({
+        ...order,
+        id: order.id_key || order.id
+      }));
+      setOrders(normalizedOrders);
     } catch (e) {
       console.error('Error loading orders:', e);
       setError('Error al cargar órdenes');
@@ -230,10 +235,13 @@ const AdminDashboard = () => {
   };
 
   const handleViewOrder = async (o) => { 
-    setSelectedOrder(o); 
+    // Asegurar que el objeto tenga un id normalizado
+    const normalizedOrder = { ...o, id: o.id_key || o.id };
+    setSelectedOrder(normalizedOrder); 
     setLoadingDetails(true); 
     try { 
-      const d = await orderDetailService.getByOrderId(o.id); 
+      const orderId = normalizedOrder.id;
+      const d = await orderDetailService.getByOrderId(orderId); 
       setOrderDetails(d); 
     } catch(e) { 
       console.error(e);
@@ -307,8 +315,8 @@ const AdminDashboard = () => {
 
   // Mapeo de métodos de entrega
   const DELIVERY_MAP = {
-    1: { label: 'Drive Thru', icon: '🚗' },
-    2: { label: 'Retiro en Tienda', icon: '🏪' },
+    1: { label: 'Retiro en Tienda', icon: '🏪' },
+    2: { label: 'Entrega en Mano', icon: '🤝' },
     3: { label: 'Envío a Domicilio', icon: '🚚' }
   };
 

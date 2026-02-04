@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, CreditCard, MapPin, Plus, Check, X, Calendar, Lock, Loader, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, MapPin, Plus, Check, X, Calendar, Lock, Loader, AlertCircle, Store, Truck, HandCoins } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { addressService } from '../services/addressService';
@@ -16,7 +16,19 @@ const Checkout = () => {
   const navigate = useNavigate();
 
   const totalPrice = getTotalPrice();
-  const shippingCost = totalPrice >= 20 ? 0 : 5;
+
+  // Estado del método de entrega: 'store' = retiro en tienda, 'hand' = entrega en mano, 'delivery' = envío a domicilio
+  const [deliveryMethod, setDeliveryMethod] = useState('delivery');
+
+  // Cálculo del costo de envío según el método seleccionado
+  const getShippingCost = () => {
+    if (deliveryMethod === 'store') return 0; // Retiro en tienda: gratis
+    if (deliveryMethod === 'hand') return 2; // Entrega en mano: costo reducido
+    // Envío a domicilio: gratis si supera $20
+    return totalPrice >= 20 ? 0 : 5;
+  };
+  
+  const shippingCost = getShippingCost();
   const finalTotal = totalPrice + shippingCost;
 
   // Estado de direcciones de envío
@@ -250,33 +262,35 @@ const Checkout = () => {
     try {
       let finalAddressId = null;
 
-      // 1. Procesamiento de dirección (nueva o existente)
-      if (isAddingAddress) {
-        // Creación de nueva dirección
-        if (!newAddress.street || !newAddress.city) {
-          setLoading(false);
-          return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
-        }
-        
-        const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
-        finalAddressId = savedAddr.id_key || savedAddr.id;
-        
-      } else {
-        // Utilización de dirección seleccionada existente
-        if (!selectedAddressId && addresses.length === 0) {
-          setLoading(false);
-          return showAlert('warning', 'Falta Dirección', 'Debes agregar una dirección de envío.');
-        }
-        
-        if (!selectedAddressId && addresses.length > 0) {
-          finalAddressId = addresses[0].id;
+      // 1. Procesamiento de dirección (solo para envío a domicilio)
+      if (deliveryMethod === 'delivery') {
+        if (isAddingAddress) {
+          // Creación de nueva dirección
+          if (!newAddress.street || !newAddress.city) {
+            setLoading(false);
+            return showAlert('error', 'Dirección Incompleta', 'Calle y Ciudad son obligatorios.');
+          }
+          
+          const savedAddr = await addressService.create({ ...newAddress, client_id: user.id_key });
+          finalAddressId = savedAddr.id_key || savedAddr.id;
+          
         } else {
-          finalAddressId = selectedAddressId;
+          // Utilización de dirección seleccionada existente
+          if (!selectedAddressId && addresses.length === 0) {
+            setLoading(false);
+            return showAlert('warning', 'Falta Dirección', 'Debes agregar una dirección de envío.');
+          }
+          
+          if (!selectedAddressId && addresses.length > 0) {
+            finalAddressId = addresses[0].id;
+          } else {
+            finalAddressId = selectedAddressId;
+          }
         }
       }
 
-      // Validación final de dirección
-      if (!finalAddressId) {
+      // Validación final de dirección (solo requerida para envío a domicilio)
+      if (deliveryMethod === 'delivery' && !finalAddressId) {
         setLoading(false);
         return showAlert('warning', 'Falta Dirección', 'Selecciona dónde enviar tu pedido.');
       }
@@ -342,11 +356,18 @@ const Checkout = () => {
       const billId = createdBill.id_key || createdBill.id;
 
       // 6. Creación de orden con el identificador de factura
+      // Mapeo del método de entrega a los valores del backend
+      const deliveryMethodMap = {
+        'store': 1,    // Retiro en tienda
+        'hand': 2,     // Entrega en mano
+        'delivery': 3  // Envío a domicilio
+      };
+
       const orderPayload = {
         client_id: parseInt(user.id_key),
         bill_id: parseInt(billId),
         total: parseFloat(finalTotal),
-        delivery_method: 3,
+        delivery_method: deliveryMethodMap[deliveryMethod],
         status: 1
       };
 
@@ -491,8 +512,112 @@ const Checkout = () => {
           {/* COLUMNA IZQUIERDA: FORMULARIOS */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* 1. SECCIÓN DIRECCIÓN */}
+            {/* 1. SECCIÓN MÉTODO DE ENTREGA */}
             <div className="bg-surface rounded-2xl border border-ui-border p-6 shadow-sm">
+              <h3 className="font-bold text-text-primary flex items-center gap-2 text-lg mb-6 border-b border-ui-border pb-4">
+                <Truck className="text-primary" size={20}/> Método de Entrega
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Retiro en Tienda */}
+                <div 
+                  onClick={() => setDeliveryMethod('store')}
+                  className={`p-5 rounded-xl border cursor-pointer transition-all relative group ${
+                    deliveryMethod === 'store' 
+                      ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/50' 
+                      : 'bg-background border-ui-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                      deliveryMethod === 'store' ? 'bg-primary text-black' : 'bg-ui-border/50 text-text-muted group-hover:bg-primary/20 group-hover:text-primary'
+                    }`}>
+                      <Store size={20} />
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-auto transition-colors ${
+                      deliveryMethod === 'store' ? 'border-primary bg-primary' : 'border-ui-border group-hover:border-primary/50'
+                    }`}>
+                      {deliveryMethod === 'store' && <Check size={12} className="text-black stroke-[3]"/>}
+                    </div>
+                  </div>
+                  <p className="font-bold text-sm text-text-primary">Retiro en Tienda</p>
+                  <p className="text-xs text-text-secondary mt-1">Pasa a buscar tu pedido</p>
+                  <div className="mt-3 pt-3 border-t border-ui-border">
+                    <span className="text-primary font-bold text-sm">GRATIS</span>
+                  </div>
+                </div>
+
+                {/* Entrega en Mano */}
+                <div 
+                  onClick={() => setDeliveryMethod('hand')}
+                  className={`p-5 rounded-xl border cursor-pointer transition-all relative group ${
+                    deliveryMethod === 'hand' 
+                      ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/50' 
+                      : 'bg-background border-ui-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                      deliveryMethod === 'hand' ? 'bg-primary text-black' : 'bg-ui-border/50 text-text-muted group-hover:bg-primary/20 group-hover:text-primary'
+                    }`}>
+                      <HandCoins size={20} />
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-auto transition-colors ${
+                      deliveryMethod === 'hand' ? 'border-primary bg-primary' : 'border-ui-border group-hover:border-primary/50'
+                    }`}>
+                      {deliveryMethod === 'hand' && <Check size={12} className="text-black stroke-[3]"/>}
+                    </div>
+                  </div>
+                  <p className="font-bold text-sm text-text-primary">Entrega en Mano</p>
+                  <p className="text-xs text-text-secondary mt-1">Te lo llevamos personalmente</p>
+                  <div className="mt-3 pt-3 border-t border-ui-border">
+                    <span className="text-text-primary font-bold text-sm">$2.00</span>
+                  </div>
+                </div>
+
+                {/* Envío a Domicilio */}
+                <div 
+                  onClick={() => setDeliveryMethod('delivery')}
+                  className={`p-5 rounded-xl border cursor-pointer transition-all relative group ${
+                    deliveryMethod === 'delivery' 
+                      ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/50' 
+                      : 'bg-background border-ui-border hover:border-primary/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                      deliveryMethod === 'delivery' ? 'bg-primary text-black' : 'bg-ui-border/50 text-text-muted group-hover:bg-primary/20 group-hover:text-primary'
+                    }`}>
+                      <Truck size={20} />
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-auto transition-colors ${
+                      deliveryMethod === 'delivery' ? 'border-primary bg-primary' : 'border-ui-border group-hover:border-primary/50'
+                    }`}>
+                      {deliveryMethod === 'delivery' && <Check size={12} className="text-black stroke-[3]"/>}
+                    </div>
+                  </div>
+                  <p className="font-bold text-sm text-text-primary">Envío a Domicilio</p>
+                  <p className="text-xs text-text-secondary mt-1">Recibilo en tu dirección</p>
+                  <div className="mt-3 pt-3 border-t border-ui-border">
+                    {totalPrice >= 20 ? (
+                      <span className="text-primary font-bold text-sm">GRATIS</span>
+                    ) : (
+                      <span className="text-text-primary font-bold text-sm">$5.00</span>
+                    )}
+                    <p className="text-[10px] text-text-muted mt-0.5">Gratis en compras +$20</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. SECCIÓN DIRECCIÓN (solo para envío a domicilio) */}
+            {deliveryMethod === 'delivery' && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-surface rounded-2xl border border-ui-border p-6 shadow-sm"
+            >
               <div className="flex justify-between items-center mb-6 border-b border-ui-border pb-4">
                 <h3 className="font-bold text-text-primary flex items-center gap-2 text-lg">
                   <MapPin className="text-primary" size={20}/> Dirección de Envío
@@ -582,9 +707,10 @@ const Checkout = () => {
                   </motion.div>
                 )}
               </div>
-            </div>
+            </motion.div>
+            )}
 
-            {/* 2. SECCIÓN PAGO */}
+            {/* 3. SECCIÓN PAGO */}
             <div className="bg-surface rounded-2xl border border-ui-border p-6 shadow-sm">
               <h3 className="font-bold text-text-primary flex items-center gap-2 mb-6 text-lg border-b border-ui-border pb-4">
                 <CreditCard className="text-primary" size={20}/> Método de Pago
@@ -696,8 +822,12 @@ const Checkout = () => {
 
                <div className="space-y-3 mb-6 pb-6 border-b border-ui-border">
                   <div className="flex justify-between text-text-secondary text-sm"><span>Subtotal</span> <span className="font-mono">${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
-                  <div className="flex justify-between text-text-secondary text-sm">
-                    <span>Envío</span> 
+                  <div className="flex justify-between text-text-secondary text-sm items-center">
+                    <span className="flex items-center gap-2">
+                      {deliveryMethod === 'store' && <><Store size={14} className="text-primary"/> Retiro en Tienda</>}
+                      {deliveryMethod === 'hand' && <><HandCoins size={14} className="text-primary"/> Entrega en Mano</>}
+                      {deliveryMethod === 'delivery' && <><Truck size={14} className="text-primary"/> Envío a Domicilio</>}
+                    </span> 
                     {shippingCost === 0 ? (
                       <span className="text-primary font-bold text-xs bg-primary/10 px-2 py-0.5 rounded">GRATIS</span>
                     ) : (

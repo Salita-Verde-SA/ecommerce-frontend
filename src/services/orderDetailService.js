@@ -31,6 +31,7 @@ export const orderDetailService = {
         id: detail.id_key,
         quantity: detail.quantity,
         price: parseFloat(detail.price),
+        unit_price: parseFloat(detail.price),
         subtotal: detail.quantity * parseFloat(detail.price),
         order_id: detail.order_id,
         product_id: detail.product_id,
